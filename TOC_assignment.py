@@ -1,18 +1,21 @@
 import re
 
 def main(text_log: str):
-    match = re.search(r'(.*?) DOB:(.*)', text_log, re.DOTALL)
+    try:
+        match = re.search(r'(.*?) DOB:(.*)', text_log, re.DOTALL)
 
-    part1 = match.group(1)
-    part2 = match.group(2)
+        part1 = match.group(1)
+        part2 = match.group(2)
 
-    part2_split = re.search(r'(.*?) Address: (.*)', part2, re.DOTALL)
+        part2_split = re.search(r'(.*?) Address: (.*)', part2, re.DOTALL)
 
-    date_of_birth = part2_split.group(1)
-    address = part2_split.group(2)
+        date_of_birth = part2_split.group(1)
+        address = part2_split.group(2)
 
-    credit_card, email, tel = part1.split(' ')
-    return f"{censor_credit_card(credit_card)} {censor_email(email)} {censor_tel(tel)} {censor_DOB(date_of_birth)} {censor_address(address)}"
+        credit_card, email, tel = part1.split(' ')
+        return f"{censor_credit_card(credit_card)} {censor_email(email)} {censor_tel(tel)} {censor_DOB(date_of_birth)} {censor_address(address)}"
+    except:
+        return "Invalid input format"
 
 
 def censor_credit_card(credit_card):
