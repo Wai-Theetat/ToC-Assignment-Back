@@ -26,7 +26,8 @@ def run_tests():
     for i, case in enumerate(testcases, start=1):
         result = module.main(case["input"])
         print(f"========== Case {i} ==========")
-        print(f"Input: {case["input"]}")
+        print(f"Test : {case['tests']}")
+        print(f"Input: {case['input']}")
         print(f"Output: {result}\n")
 
     return True
