@@ -12,14 +12,14 @@ def main(text_log: str):
         date_of_birth = part2_split.group(1)
         address = part2_split.group(2)
 
-        credit_card, email, tel = part1.split(' ')
+        credit_card, email, tel = part1.split()
         return f"{censor_credit_card(credit_card)} {censor_email(email)} {censor_tel(tel)} {censor_DOB(date_of_birth)} {censor_address(address)}"
-    except:
-        return "Invalid input format"
+    except Exception as error:
+        return error
 
 
 def censor_credit_card(credit_card):
-    newFormat = re.sub(r'(\d{4})-(\d{4})-(\d{4})-(\d{4})', r'XXXX-XXXX-XXXX-\3', credit_card)
+    newFormat = re.sub(r'(\d{4})-(\d{4})-(\d{4})-(\d{4})', r'XXXX-XXXX-XXXX-\4', credit_card)
     return f"{newFormat}"
 
 def censor_tel(tel):
@@ -38,14 +38,14 @@ def censor_email(email):
     return newformat
 
 def censor_DOB(DOB):
-    newFormat = re.sub(r'(\d{2})/(\d{2})/(\d{2})(\d+)', r'XX/XX/\3XX', DOB)
+    newFormat = re.sub(r'(\d{1,2})/(\d{1,2})/(\d{2})(\d+)', r'XX/XX/\3XX', DOB)
     return f"DOB:{newFormat}"
 
 def censor_address(address):
     def mask_digits(match):
-        return 'X' * len(match.group())
+        return re.sub(r'\d', 'X', match.group())
     
-    newformat = re.sub(r'\d+', mask_digits, address, count=1)
+    newformat = re.sub(r'\d+(?:/\d+)?', mask_digits, address, count=1)
     return f"Address: {newformat}"
 
 
