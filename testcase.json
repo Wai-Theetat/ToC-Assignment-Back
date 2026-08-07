@@ -43,7 +43,7 @@
     },
     {
       "tests": "DOB day/month without leading zero - breaks the strict \\d{2}/\\d{2} pattern",
-      "input": "1234-5678-9012-3456 somchai.d@company.com 093-245-7894 DOB:5/3/2540 Address: 689 ซอยลาดกระบัง 19 ถนนลาดกระบัง แขวงลาดกระบัง เขตลาดกระบัง กรุงเทพฯ"
+      "input": "1234-5678-9012-3456 somchai.d@company.com 093-245-7894 DOB:5/3/2540000 Address: 689 ซอยลาดกระบัง 19 ถนนลาดกระบัง แขวงลาดกระบัง เขตลาดกระบัง กรุงเทพฯ"
     },
     {
       "tests": "DOB using Gregorian (Christian) 4-digit year instead of Buddhist era - code still 'works' but produces a semantically odd result worth being aware of",
