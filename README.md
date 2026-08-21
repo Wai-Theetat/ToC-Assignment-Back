@@ -52,7 +52,7 @@ pip install -r requirements.txt
 uvicorn app.main:app --reload
 ```
 
-เปิด http://localhost:8000/docs จะเห็น Swagger UI สำหรับทดสอบ API ทั้งหมด
+เปิด http://localhost:8080/docs จะเห็น Swagger UI สำหรับทดสอบ API ทั้งหมด
 
 ## Run (ครั้งถัดไป)
 
@@ -82,12 +82,12 @@ uvicorn app.main:app --reload
 
 ## Frontend เชื่อม Backend ยังไง
 
-Backend รันที่ `http://localhost:8000` และมี CORS เปิดให้ `http://localhost:3000` (Next.js) เรียกได้
+Backend รันที่ `http://localhost:8080` และมี CORS เปิดให้ `http://localhost:3000` (Next.js) เรียกได้
 
 ### ตัวอย่าง: สมัครสมาชิก
 
 ```javascript
-const res = await fetch("http://localhost:8000/auth/register", {
+const res = await fetch("http://localhost:8080/auth/register", {
   method: "POST",
   headers: { "Content-Type": "application/json" },
   body: JSON.stringify({
@@ -106,7 +106,7 @@ const data = await res.json();
 ### ตัวอย่าง: ดูโปรไฟล์ (ข้อมูลถูก mask แล้ว)
 
 ```javascript
-const res = await fetch("http://localhost:8000/users/1");
+const res = await fetch("http://localhost:8080/users/1");
 const profile = await res.json();
 // {
 //   "username": "somchai",
@@ -121,7 +121,7 @@ const profile = await res.json();
 ### ตัวอย่าง: ฝากเงิน
 
 ```javascript
-const res = await fetch("http://localhost:8000/transactions/1/deposit", {
+const res = await fetch("http://localhost:8080/transactions/1/deposit", {
   method: "POST",
   headers: { "Content-Type": "application/json" },
   body: JSON.stringify({ amount: 500 }),
@@ -132,7 +132,7 @@ const result = await res.json();
 ### ตัวอย่าง: ดูประวัติธุรกรรม
 
 ```javascript
-const res = await fetch("http://localhost:8000/transactions/1/history");
+const res = await fetch("http://localhost:8080/transactions/1/history");
 const history = await res.json();
 // [
 //   {
