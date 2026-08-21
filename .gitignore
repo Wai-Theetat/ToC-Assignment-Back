@@ -3,3 +3,4 @@ backend/.env
 backend/venv/
 backend/*.db
 .DS_Store
+.vscode

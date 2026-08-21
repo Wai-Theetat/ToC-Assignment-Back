@@ -66,7 +66,10 @@ def login(req: LoginRequest, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.username == req.username).first()
 
     # 2. check password if correct with db 
+    if not user or user.password != req.password:
+        raise HTTPException(status_code=400, detail="Invalid username or password")
+
+    # 3. 
+    return LoginResponse(message="login success", user_id=user.id, username=user.username)
     
 
-    # 3. return with name and id
-    return LoginResponse(message="login success", user_id=1, username=req.username)
