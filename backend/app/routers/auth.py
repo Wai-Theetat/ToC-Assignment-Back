@@ -25,8 +25,29 @@ fetch("http://localhost:8080/auth/register", {
 }).then(r => r.json()).then(console.log)
 ```""")
 def register(req: RegisterRequest, db: Session = Depends(get_db)):
-    # TODO: implement register logic
-    return {"message": "registered", "username": req.username}
+    # 1. เช็คว่า username ซ้ำไหม
+    existing_user = db.query(User).filter(User.username == req.username).first()
+    if existing_user:
+        raise HTTPException(status_code=400, detail="Username already exists")
+
+    # 2. สร้าง User object จากข้อมูลที่รับมา
+    new_user = User(
+        username=req.username,
+        password=req.password,       # TODO: ควร hash password ก่อน เช่น bcrypt
+        email=req.email,
+        tel=req.tel,
+        date_of_birth=req.date_of_birth,
+        address=req.address,
+        credit_card=req.credit_card,
+        money=0.0,
+    )
+
+    # 3. บันทึกลง DB
+    db.add(new_user)
+    db.commit()
+    db.refresh(new_user)  # ดึง id ที่ DB generate มาใส่ใน new_user
+
+    return {"message": "registered", "user_id": new_user.id, "username": new_user.username}
 
 
 @router.post("/login", response_model=LoginResponse, description="""เข้าสู่ระบบ
@@ -41,4 +62,11 @@ fetch("http://localhost:8080/auth/login", {
 ```""")
 def login(req: LoginRequest, db: Session = Depends(get_db)):
     # TODO: implement login logic
+    # 1. find user from db ,get the user object
+    user = db.query(User).filter(User.username == req.username).first()
+
+    # 2. check password if correct with db 
+    
+
+    # 3. return with name and id
     return LoginResponse(message="login success", user_id=1, username=req.username)
