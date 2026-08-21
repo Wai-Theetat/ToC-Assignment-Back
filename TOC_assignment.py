@@ -20,7 +20,7 @@ def main(text_log: str):
         date_of_birth = part2_split.group(1)
         address = part2_split.group(2)
 
-        return f"{censor_credit_card(credit_card)} {censor_mail(email)} {censor_tel(tel)} {censor_DOB(date_of_birth)} {censor_address(address)}"
+        return f"{censor_credit_card(credit_card)} {censor_email(email)} {censor_tel(tel)} {censor_DOB(date_of_birth)} {censor_address(address)}"
     except Exception as error:
         return f"Error : {error}"
 
@@ -57,9 +57,44 @@ def censor_tel(tel):
     newFormat = re.sub(r'(\d{3})-(\d{3})-(\d{4})', r'XXX-XXX-\3', tel)
     return f"{newFormat}"
 
+<<<<<<< HEAD
 def censor_mail(text):
     pattern = r'([\w.+-])([\w.+-]+)([\w.+-])@([\w.-]+\.[\w.]+)'
     return re.sub(pattern, lambda m: f'{m.group(1)}{"X"*len(m.group(2))}{m.group(3)}@{m.group(4)}', text)
+=======
+def censor_email(email):
+    #จาก assignment จะมีอีเมลมาด้วย โดยมีรูปแบบคือจะขึ้นต้นด้วยคำอะไรก็ได้ขั้นด้วย @ แล้วตามด้วย domain name เช่น somchai.d@company.com
+    #ผลลัพธ์ที่ต้องการคือ ตัวอักษรตัวแรก เซ็นเซอร์กลุ่มตัวอักษรตรงกลางทั้งหมด และจนถึงตัวอักษรก่อนตัวสุดท้ายก่อน @ 
+
+    #โดยฟังก์ชัน regex ที่ใช้คือ re.sub(pattern, replacement, string)
+    #ใน pattern parameter เราจะได้ตัวเลข 3 กลุ่ม 
+    #โดยใช้ regex r'^(\w)(.*?)(\w)(?=@)'
+    #โดยแต่ละตัวมีความหมายดังนี้
+    #(\w) หมายถึง ตัวอักษรเพียงตัวเดียว
+    #(.*?) หมายถึง ตัวอักษรตรงกลางทั้งหมด
+    #(?=@) หมายถึง regex นี้จะหยุดตรงตัวอักษรที่ @
+
+    #ในส่วนของ replacement parameter 
+    #เราไม่สามารถสร้าง string ด้วยวิธีก่อนหน้าได้
+    #จึงมีการสร้าง helper function ชื่อ mask email เพื่อช่วยในการสร้าง string
+    
+    def mask_email(match):
+        
+        #จาก regex เราจะได้ตัวอักษร 3 กลุ่ม
+        #โดยเราจะใช้ตัวอักษรกลุ่มแรก กลุ่มตัวอักษรตรงกลาง และตัวอักษรสุดท้ายก่อน @
+        #ใน string ใหม่ เราจะคืนค่ากับตัวอักษรกลุ่มแรก + กลุ่มตัวอักษรตรงกลางที่ถูกเซ็นเซอร์ + ตัวอักษรกลุ่มสุดท้าย
+        
+        first = match.group(1)
+        middle = match.group(2)
+        last = match.group(3)
+        return first + '*' * len(middle) + last
+
+    #จากโค้ดอาจเกิดคำถามว่า แล้ว string หลัง @ ไปอยู่ไหน
+    #ก็คือหลังจากใช้ regex จบแล้วส่วนที่ไม่โดน จะยังอยู่เหมือนเดิมไม่โดนแตะ และเมื่อ mask_email คืนค่า string ใหม่กลับมา 
+    # re.sub() ก็จะเอาค่าที่ได้มารวมกับส่วนที่ไม่โดนแตะ
+    newformat = re.sub(r'^(\w)(.*?)(\w)(?=@)', mask_email, email)
+    return newformat
+>>>>>>> feature/backend-setup
 
 def censor_DOB(DOB):
     #จาก assignment วันเกิด จะมาในรูปแบบ : วัน(ตัวเลข)/เดือน(ตัวเลข)/ปี(ตัวเลข) เช่น 25/12/2549
@@ -76,7 +111,11 @@ def censor_DOB(DOB):
     #ในส่วนของ replacement parameter 
     #เราสามารถใช้ XX/XX/\3XX แบบปกติได้ 
     #แต่ในกรณีที่ input ของปีเกิดมีตัวเลขมากกว่า 4 ตัว เราจึงสร้าง helper function เพื่อช่วยในการสร้าง string ใหม่
+<<<<<<< HEAD
     def censor_DOB(match):
+=======
+    def mask_DOB(match):
+>>>>>>> feature/backend-setup
         #จาก regex เราจะได้ตัวเลข 4 กลุ่ม แต่จะโฟกัสในส่วนของปีเกิดอย่างเดียว
         
         third = match.group(3)
@@ -85,7 +124,11 @@ def censor_DOB(DOB):
         #และในส่วนของปี จาก assignment เราจะคไม่เซ็นเซอร์ตัวเลข 2 ตัวแรก และส่วนที่เหลือจะถูกเซ็นเซอร์ด้วย X
         return f"XX/XX/{third}{len(fourth) * 'X'}"
     
+<<<<<<< HEAD
     newFormat = re.sub(r'(\d{1,2})/(\d{1,2})/(\d{2})(\d+)', censor_DOB, DOB)
+=======
+    newFormat = re.sub(r'(\d{1,2})/(\d{1,2})/(\d{2})(\d+)', mask_DOB, DOB)
+>>>>>>> feature/backend-setup
     #เพิ่ม string DOB: กลับเข้าไปเหมือนเดิม เนื่องจากตัดออกไปก่อนเข้าฟังก์ชัน
     return f"DOB:{newFormat}"
 
