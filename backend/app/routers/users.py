@@ -19,7 +19,7 @@ router = APIRouter(prefix="/users", tags=["Users"])
 
 **Console test:**
 ```
-fetch("http://localhost:8000/users/1").then(r => r.json()).then(console.log)
+fetch("http://localhost:8080/users/1").then(r => r.json()).then(console.log)
 ```""")
 def get_user_profile(user_id: int, db: Session = Depends(get_db)):
     # TODO: implement get user from DB
@@ -37,7 +37,7 @@ def get_user_profile(user_id: int, db: Session = Depends(get_db)):
 
 **Console test:**
 ```
-fetch("http://localhost:8000/users/1", {
+fetch("http://localhost:8080/users/1", {
   method: "PUT",
   headers: { "Content-Type": "application/json" },
   body: JSON.stringify({ email: "new@email.com" }),
@@ -52,7 +52,7 @@ def update_user(user_id: int, req: UserUpdate, db: Session = Depends(get_db)):
 
 **Console test:**
 ```
-fetch("http://localhost:8000/users/1", {
+fetch("http://localhost:8080/users/1", {
   method: "DELETE",
 }).then(r => r.json()).then(console.log)
 ```""")

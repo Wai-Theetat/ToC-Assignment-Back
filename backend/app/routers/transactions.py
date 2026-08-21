@@ -19,7 +19,7 @@ router = APIRouter(prefix="/transactions", tags=["Transactions"])
 
 **Console test:**
 ```
-fetch("http://localhost:8000/transactions/1/balance").then(r => r.json()).then(console.log)
+fetch("http://localhost:8080/transactions/1/balance").then(r => r.json()).then(console.log)
 ```""")
 def get_balance(user_id: int, db: Session = Depends(get_db)):
     # TODO: implement get balance
@@ -30,7 +30,7 @@ def get_balance(user_id: int, db: Session = Depends(get_db)):
 
 **Console test:**
 ```
-fetch("http://localhost:8000/transactions/1/deposit", {
+fetch("http://localhost:8080/transactions/1/deposit", {
   method: "POST",
   headers: { "Content-Type": "application/json" },
   body: JSON.stringify({ amount: 500 }),
@@ -45,7 +45,7 @@ def deposit(user_id: int, req: DepositWithdrawRequest, db: Session = Depends(get
 
 **Console test:**
 ```
-fetch("http://localhost:8000/transactions/1/withdraw", {
+fetch("http://localhost:8080/transactions/1/withdraw", {
   method: "POST",
   headers: { "Content-Type": "application/json" },
   body: JSON.stringify({ amount: 100 }),
@@ -60,7 +60,7 @@ def withdraw(user_id: int, req: DepositWithdrawRequest, db: Session = Depends(ge
 
 **Console test:**
 ```
-fetch("http://localhost:8000/transactions/1/history").then(r => r.json()).then(console.log)
+fetch("http://localhost:8080/transactions/1/history").then(r => r.json()).then(console.log)
 ```""")
 def get_transaction_history(user_id: int, db: Session = Depends(get_db)):
     # TODO: implement get transaction history

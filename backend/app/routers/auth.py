@@ -12,7 +12,7 @@ router = APIRouter(prefix="/auth", tags=["Auth"])
 
 **Console test:**
 ```
-fetch("http://localhost:8000/auth/register", {
+fetch("http://localhost:8080/auth/register", {
   method: "POST",
   headers: { "Content-Type": "application/json" },
   body: JSON.stringify({
@@ -33,7 +33,7 @@ def register(req: RegisterRequest, db: Session = Depends(get_db)):
 
 **Console test:**
 ```
-fetch("http://localhost:8000/auth/login", {
+fetch("http://localhost:8080/auth/login", {
   method: "POST",
   headers: { "Content-Type": "application/json" },
   body: JSON.stringify({ username: "somchai", password: "1234" }),
