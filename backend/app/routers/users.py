@@ -22,14 +22,17 @@ router = APIRouter(prefix="/users", tags=["Users"])
 fetch("http://localhost:8080/users/1").then(r => r.json()).then(console.log)
 ```""")
 def get_user_profile(user_id: int, db: Session = Depends(get_db)):
-    # TODO: implement get user from DB
+    
+    getUser = db.query(User).filter(User.id == user_id).first()
+    if not getUser:
+        raise HTTPException(status_code=404, detail="User not found")
     return UserProfile(
-        username="somchai",
-        email=mask_email("somchai.d@company.com"),
-        tel=mask_tel("093-245-7894"),
-        date_of_birth=mask_dob("25/12/2549"),
-        address=mask_address("689 ซอยลาดกระบัง 19 ถนนลาดกระบัง แขวงลาดกระบัง เขตลาดกระบัง กรุงเทพฯ"),
-        credit_card=mask_credit_card("1234-5678-9012-3456"),
+        username=getUser.username,
+        email=mask_email(getUser.email),
+        tel=mask_tel(getUser.tel),
+        date_of_birth=mask_dob(getUser.date_of_birth),
+        address=mask_address(getUser.address),
+        credit_card=mask_credit_card(getUser.credit_card),
     )
 
 
@@ -44,7 +47,16 @@ fetch("http://localhost:8080/users/1", {
 }).then(r => r.json()).then(console.log)
 ```""")
 def update_user(user_id: int, req: UserUpdate, db: Session = Depends(get_db)):
-    # TODO: implement update user
+    getUser = db.query(User).filter(User.id == user_id).first()
+    if not getUser:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    update_data = req.model_dump(exclude_unset=True, exclude_none=True)
+    for field, value in update_data.items():
+        setattr(getUser, field, value)
+    
+    db.commit()
+    db.refresh(getUser)
     return {"message": "updated", "user_id": user_id}
 
 
@@ -57,5 +69,9 @@ fetch("http://localhost:8080/users/1", {
 }).then(r => r.json()).then(console.log)
 ```""")
 def delete_user(user_id: int, db: Session = Depends(get_db)):
-    # TODO: implement delete user
+    getUser = db.query(User).filter(User.id == user_id).first()
+    if not getUser:
+        raise HTTPException(status_code=404, detail="User not found")
+    db.delete(getUser)
+    db.commit()
     return {"message": "deleted", "user_id": user_id}
