@@ -57,11 +57,6 @@ def censor_tel(tel):
     newFormat = re.sub(r'(\d{3})-(\d{3})-(\d{4})', r'XXX-XXX-\3', tel)
     return f"{newFormat}"
 
-<<<<<<< HEAD
-def censor_mail(text):
-    pattern = r'([\w.+-])([\w.+-]+)([\w.+-])@([\w.-]+\.[\w.]+)'
-    return re.sub(pattern, lambda m: f'{m.group(1)}{"X"*len(m.group(2))}{m.group(3)}@{m.group(4)}', text)
-=======
 def censor_email(email):
     #จาก assignment จะมีอีเมลมาด้วย โดยมีรูปแบบคือจะขึ้นต้นด้วยคำอะไรก็ได้ขั้นด้วย @ แล้วตามด้วย domain name เช่น somchai.d@company.com
     #ผลลัพธ์ที่ต้องการคือ ตัวอักษรตัวแรก เซ็นเซอร์กลุ่มตัวอักษรตรงกลางทั้งหมด และจนถึงตัวอักษรก่อนตัวสุดท้ายก่อน @ 
@@ -94,7 +89,6 @@ def censor_email(email):
     # re.sub() ก็จะเอาค่าที่ได้มารวมกับส่วนที่ไม่โดนแตะ
     newformat = re.sub(r'^(\w)(.*?)(\w)(?=@)', mask_email, email)
     return newformat
->>>>>>> feature/backend-setup
 
 def censor_DOB(DOB):
     #จาก assignment วันเกิด จะมาในรูปแบบ : วัน(ตัวเลข)/เดือน(ตัวเลข)/ปี(ตัวเลข) เช่น 25/12/2549
@@ -111,11 +105,7 @@ def censor_DOB(DOB):
     #ในส่วนของ replacement parameter 
     #เราสามารถใช้ XX/XX/\3XX แบบปกติได้ 
     #แต่ในกรณีที่ input ของปีเกิดมีตัวเลขมากกว่า 4 ตัว เราจึงสร้าง helper function เพื่อช่วยในการสร้าง string ใหม่
-<<<<<<< HEAD
-    def censor_DOB(match):
-=======
     def mask_DOB(match):
->>>>>>> feature/backend-setup
         #จาก regex เราจะได้ตัวเลข 4 กลุ่ม แต่จะโฟกัสในส่วนของปีเกิดอย่างเดียว
         
         third = match.group(3)
@@ -124,11 +114,7 @@ def censor_DOB(DOB):
         #และในส่วนของปี จาก assignment เราจะคไม่เซ็นเซอร์ตัวเลข 2 ตัวแรก และส่วนที่เหลือจะถูกเซ็นเซอร์ด้วย X
         return f"XX/XX/{third}{len(fourth) * 'X'}"
     
-<<<<<<< HEAD
-    newFormat = re.sub(r'(\d{1,2})/(\d{1,2})/(\d{2})(\d+)', censor_DOB, DOB)
-=======
     newFormat = re.sub(r'(\d{1,2})/(\d{1,2})/(\d{2})(\d+)', mask_DOB, DOB)
->>>>>>> feature/backend-setup
     #เพิ่ม string DOB: กลับเข้าไปเหมือนเดิม เนื่องจากตัดออกไปก่อนเข้าฟังก์ชัน
     return f"DOB:{newFormat}"
 
