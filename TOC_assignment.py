@@ -1,6 +1,8 @@
 import re
 
 def main(text_log: str):
+    if(text_log is None or text_log == ""):
+        return "Error : Input is empty"
     try:
         #จาก assignmet วันเกิด จะขึ้นต้นด้วย (DOB:) เสมอ
         #จึงสามารถใช้เป็นจุดแบ่ง แบ่งข้อมูลออกเป็นสองส่วน

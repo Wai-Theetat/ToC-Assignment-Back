@@ -2,64 +2,88 @@
   "cases": [
     {
       "tests": "baseline valid case",
-      "input": "1234-5678-9012-3456 somchai.d@company.com 093-245-7894 DOB:25/12/2549 Address: 689 ซอยลาดกระบัง 19 ถนนลาดกระบัง แขวงลาดกระบัง เขตลาดกระบัง กรุงเทพฯ"
+      "input": "1234-5678-9012-3456 somchai.d@company.com 093-245-7894 DOB:25/12/2549 Address: 689 ซอยลาดกระบัง 19 ถนนลาดกระบัง แขวงลาดกระบัง เขตลาดกระบัง กรุงเทพฯ",
+      "expected_output": "XXXX-XXXX-XXXX-3456 s*******d@company.com XXX-XXX-7894 DOB:XX/XX/25XX Address: XXX ซอยลาดกระบัง 19 ถนนลาดกระบัง แขวงลาดกระบัง เขตลาดกระบัง กรุงเทพฯ"
     },
     {
-      "tests": "baseline valid case, different province/format",
-      "input": "1012-1204-3543-4324 nasdasd.pdas@gmail.com 063-397-1002 DOB:01/01/2549 Address: 949 ที่ไหนไม่รู้"
+      "tests": "baseline valid case, different data",
+      "input": "1012-1204-3543-4324 nasdasd.pdas@gmail.com 063-397-1002 DOB:01/01/2549 Address: 949 ที่ไหนไม่รู้",
+      "expected_output": "XXXX-XXXX-XXXX-4324 n**********s@gmail.com XXX-XXX-1002 DOB:XX/XX/25XX Address: XXX ที่ไหนไม่รู้"
     },
     {
       "tests": "address WITHOUT ซอย (soi is optional per spec)",
-      "input": "4321-8765-2109-6543 wanida.k@bank.co.th 081-555-2233 DOB:14/03/2538 Address: 15 ถนนสุขุมวิท แขวงคลองตัน เขตคลองเตย กรุงเทพฯ"
+      "input": "4321-8765-2109-6543 wanida.k@bank.co.th 081-555-2233 DOB:14/03/2538 Address: 15 ถนนสุขุมวิท แขวงคลองตัน เขตคลองเตย กรุงเทพฯ",
+      "expected_output": "XXXX-XXXX-XXXX-6543 w******k@bank.co.th XXX-XXX-2233 DOB:XX/XX/25XX Address: XX ถนนสุขุมวิท แขวงคลองตัน เขตคลองเตย กรุงเทพฯ"
     },
     {
-      "tests": "street name itself contains a number (e.g. ถนนพหลโยธิน 8) - only the house number should be masked, not the street number",
-      "input": "5566-7788-9900-1122 preecha.s@mail.co.th 082-111-4455 DOB:09/09/2545 Address: 123 ถนนพหลโยธิน 8 แขวงจอมพล เขตจตุจักร กรุงเทพฯ"
+      "tests": "street name itself contains a number - only the house number should be masked",
+      "input": "5566-7788-9900-1122 preecha.s@mail.co.th 082-111-4455 DOB:09/09/2545 Address: 123 ถนนพหลโยธิน 8 แขวงจอมพล เขตจตุจักร กรุงเทพฯ",
+      "expected_output": "XXXX-XXXX-XXXX-1122 p*******s@mail.co.th XXX-XXX-4455 DOB:XX/XX/25XX Address: XXX ถนนพหลโยธิน 8 แขวงจอมพล เขตจตุจักร กรุงเทพฯ"
     },
     {
       "tests": "house number in X/Y format common in Thai addresses",
       "input": "9988-7766-5544-3322 araya.t@company.com 095-888-7766 DOB:30/06/2543 Address: 89/1 หมู่ 4 ถนนเทพารักษ์ ตำบลบางเมือง อำเภอเมือง สมุทรปราการ",
-      "expected_behavior_check": "count=1 should only mask the very first number group (89) not /1 or หมู่ 4"
+      "expected_output": "XXXX-XXXX-XXXX-3322 a*****t@company.com XXX-XXX-7766 DOB:XX/XX/25XX Address: XX/X หมู่ 4 ถนนเทพารักษ์ ตำบลบางเมือง อำเภอเมือง สมุทรปราการ"
     },
     {
       "tests": "2-character email username (boundary of censor_email regex)",
-      "input": "1111-2222-3333-4444 ab@test.com 099-000-1111 DOB:05/05/2550 Address: 12 ถนนพระราม 4 แขวงคลองเตย เขตคลองเตย กรุงเทพฯ"
+      "input": "1111-2222-3333-4444 ab@test.com 099-000-1111 DOB:05/05/2550 Address: 12 ถนนพระราม 4 แขวงคลองเตย เขตคลองเตย กรุงเทพฯ",
+      "expected_output": "XXXX-XXXX-XXXX-4444 ab@test.com XXX-XXX-1111 DOB:XX/XX/25XX Address: XX ถนนพระราม 4 แขวงคลองเตย เขตคลองเตย กรุงเทพฯ"
     },
     {
-      "tests": "1-character email username - regex requires 2+ chars before @, expect NO masking (known bug/limitation)",
-      "input": "2222-3333-4444-5555 a@test.com 088-222-3344 DOB:18/11/2547 Address: 77 ถนนรัชดาภิเษก แขวงดินแดง เขตดินแดง กรุงเทพฯ"
+      "tests": "1-character email username",
+      "input": "2222-3333-4444-5555 a@test.com 088-222-3344 DOB:18/11/2547 Address: 77 ถนนรัชดาภิเษก แขวงดินแดง เขตดินแดง กรุงเทพฯ",
+      "expected_output": "XXXX-XXXX-XXXX-5555 a@test.com XXX-XXX-3344 DOB:XX/XX/25XX Address: XX ถนนรัชดาภิเษก แขวงดินแดง เขตดินแดง กรุงเทพฯ"
     },
     {
-      "tests": "double space between fields - checks whether the split() fix was applied",
-      "input": "1234-5678-9012-3456  somchai.d@company.com 093-245-7894 DOB:25/12/2549 Address: 689 ซอยลาดกระบัง 19 ถนนลาดกระบัง แขวงลาดกระบัง เขตลาดกระบัง กรุงเทพฯ"
+      "tests": "double space between fields",
+      "input": "1234-5678-9012-3456  somchai.d@company.com 093-245-7894 DOB:25/12/2549 Address: 689 ซอยลาดกระบัง 19 ถนนลาดกระบัง แขวงลาดกระบัง เขตลาดกระบัง กรุงเทพฯ",
+      "expected_output": "XXXX-XXXX-XXXX-3456 s*******d@company.com XXX-XXX-7894 DOB:XX/XX/25XX Address: XXX ซอยลาดกระบัง 19 ถนนลาดกระบัง แขวงลาดกระบัง เขตลาดกระบัง กรุงเทพฯ"
     },
     {
-      "tests": "credit card without dashes - does it silently return unmasked, or fail gracefully?",
-      "input": "1234567890123456 somchai.d@company.com 093-245-7894 DOB:25/12/2549 Address: 689 ซอยลาดกระบัง 19 ถนนลาดกระบัง แขวงลาดกระบัง เขตลาดกระบัง กรุงเทพฯ"
+      "tests": "credit card without dashes - censor must still recognize and mask it, not pass it through raw",
+      "input": "1234567890123456 somchai.d@company.com 093-245-7894 DOB:25/12/2549 Address: 689 ซอยลาดกระบัง 19 ถนนลาดกระบัง แขวงลาดกระบัง เขตลาดกระบัง กรุงเทพฯ",
+      "expected_output": "XXXXXXXXXXXX3456 s*******d@company.com XXX-XXX-7894 DOB:XX/XX/25XX Address: XXX ซอยลาดกระบัง 19 ถนนลาดกระบัง แขวงลาดกระบัง เขตลาดกระบัง กรุงเทพฯ"
     },
     {
-      "tests": "phone number without dashes",
-      "input": "1234-5678-9012-3456 somchai.d@company.com 0932457894 DOB:25/12/2549 Address: 689 ซอยลาดกระบัง 19 ถนนลาดกระบัง แขวงลาดกระบัง เขตลาดกระบัง กรุงเทพฯ"
+      "tests": "DOB day/month without leading zero, oversized/malformed year",
+      "input": "1234-5678-9012-3456 somchai.d@company.com 093-245-7894 DOB:5/3/2540000 Address: 689 ซอยลาดกระบัง 19 ถนนลาดกระบัง แขวงลาดกระบัง เขตลาดกระบัง กรุงเทพฯ",
+      "expected_output": "XXXX-XXXX-XXXX-3456 s*******d@company.com XXX-XXX-7894 DOB:XX/XX/25XXXXX Address: XXX ซอยลาดกระบัง 19 ถนนลาดกระบัง แขวงลาดกระบัง เขตลาดกระบัง กรุงเทพฯ"
     },
     {
-      "tests": "DOB day/month without leading zero - breaks the strict \\d{2}/\\d{2} pattern",
-      "input": "1234-5678-9012-3456 somchai.d@company.com 093-245-7894 DOB:5/3/2540000 Address: 689 ซอยลาดกระบัง 19 ถนนลาดกระบัง แขวงลาดกระบัง เขตลาดกระบัง กรุงเทพฯ"
+      "tests": "DOB using Gregorian (Christian) 4-digit year instead of Buddhist era",
+      "input": "1234-5678-9012-3456 somchai.d@company.com 093-245-7894 DOB:14/07/1998 Address: 689 ซอยลาดกระบัง 19 ถนนลาดกระบัง แขวงลาดกระบัง เขตลาดกระบัง กรุงเทพฯ",
+      "expected_output": "XXXX-XXXX-XXXX-3456 s*******d@company.com XXX-XXX-7894 DOB:XX/XX/19XX Address: XXX ซอยลาดกระบัง 19 ถนนลาดกระบัง แขวงลาดกระบัง เขตลาดกระบัง กรุงเทพฯ"
     },
     {
-      "tests": "DOB using Gregorian (Christian) 4-digit year instead of Buddhist era - code still 'works' but produces a semantically odd result worth being aware of",
-      "input": "1234-5678-9012-3456 somchai.d@company.com 093-245-7894 DOB:14/07/1998 Address: 689 ซอยลาดกระบัง 19 ถนนลาดกระบัง แขวงลาดกระบัง เขตลาดกระบัง กรุงเทพฯ"
-    },
-    {
-      "tests": "completely malformed input (missing DOB: marker) - should hit the except and return 'Invalid input format'",
-      "input": "1234-5678-9012-3456 somchai.d@company.com 093-245-7894 Address: 689 ซอยลาดกระบัง 19 ถนนลาดกระบัง แขวงลาดกระบัง เขตลาดกระบัง กรุงเทพฯ"
+      "tests": "completely malformed input (missing DOB: marker)",
+      "input": "1234-5678-9012-3456 somchai.d@company.com 093-245-7894 Address: 689 ซอยลาดกระบัง 19 ถนนลาดกระบัง แขวงลาดกระบัง เขตลาดกระบัง กรุงเทพฯ",
+      "expected_output": "Invalid input format"
     },
     {
       "tests": "trailing whitespace/newline at end of full log string",
-      "input": "1234-5678-9012-3456 somchai.d@company.com 093-245-7894 DOB:25/12/2549 Address: 689 ซอยลาดกระบัง 19 ถนนลาดกระบัง แขวงลาดกระบัง เขตลาดกระบัง กรุงเทพฯ\n\n"
+      "input": "1234-5678-9012-3456 somchai.d@company.com 093-245-7894 DOB:25/12/2549 Address: 689 ซอยลาดกระบัง 19 ถนนลาดกระบัง แขวงลาดกระบัง เขตลาดกระบัง กรุงเทพฯ\n\n",
+      "expected_output": "XXXX-XXXX-XXXX-3456 s*******d@company.com XXX-XXX-7894 DOB:XX/XX/25XX Address: XXX ซอยลาดกระบัง 19 ถนนลาดกระบัง แขวงลาดกระบัง เขตลาดกระบัง กรุงเทพฯ\n\n"
     },
     {
-      "tests": "empty string input - should hit except cleanly, not crash unhandled",
-      "input": ""
+      "tests": "empty string input",
+      "input": "",
+      "expected_output": "Error : Input is empty"
+    },
+    {
+      "tests": "field order switched (email, then credit card, then phone) - censor must identify each field by its content/pattern, not by its position, and mask it correctly regardless of order",
+      "input": "somchai.d@company.com 1234-5678-9012-3456 093-245-7894 DOB:25/12/2549 Address: 689 ซอยลาดกระบัง 19 ถนนลาดกระบัง แขวงลาดกระบัง เขตลาดกระบัง กรุงเทพฯ",
+      "expected_output": "s*******d@company.com XXXX-XXXX-XXXX-3456 XXX-XXX-7894 DOB:XX/XX/25XX Address: XXX ซอยลาดกระบัง 19 ถนนลาดกระบัง แขวงลาดกระบัง เขตลาดกระบัง กรุงเทพฯ"
+    },
+    {
+      "tests": "field order switched (phone, then credit card, then email) - censor must identify each field by its content/pattern, not by its position, and mask it correctly regardless of order",
+      "input": "093-245-7894 1234-5678-9012-3456 somchai.d@company.com DOB:25/12/2549 Address: 689 ซอยลาดกระบัง 19 ถนนลาดกระบัง แขวงลาดกระบัง เขตลาดกระบัง กรุงเทพฯ",
+      "expected_output": "XXX-XXX-7894 XXXX-XXXX-XXXX-3456 s*******d@company.com DOB:XX/XX/25XX Address: XXX ซอยลาดกระบัง 19 ถนนลาดกระบัง แขวงลาดกระบัง เขตลาดกระบัง กรุงเทพฯ"
+    },
+    {
+      "tests": "input is None instead of a string",
+      "input": null,
+      "expected_output": "Invalid input format"
     }
   ]
 }
