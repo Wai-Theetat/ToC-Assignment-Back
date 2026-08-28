@@ -91,7 +91,7 @@ def mask_dob(DOB: str) -> str:
     
     newFormat = re.sub(r'(\d{1,2})/(\d{1,2})/(\d{2})(\d+)', _replace, DOB)
     #เพิ่ม string DOB: กลับเข้าไปเหมือนเดิม เนื่องจากตัดออกไปก่อนเข้าฟังก์ชัน
-    return f"DOB:{newFormat}"
+    return f"{newFormat}"
 
 def mask_address(address: str) -> str:
     #จาก assignment address จะมาในรูปแบบ : Address: บ้านเลขที่ ซอย ถนน แขวง เขต จังหวัด และอื่นๆ
@@ -113,4 +113,4 @@ def mask_address(address: str) -> str:
     
     newformat = re.sub(r'\d+(?:/\d+)?', _replace, address, count=1)
     #เพิ่ม string Address: กลับเข้าไปเหมือนเดิม เนื่องจากตัดออกไปก่อนเข้าฟังก์ชัน
-    return f"Address: {newformat}"
+    return f"{newformat}"
