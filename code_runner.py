@@ -36,8 +36,8 @@ def run_tests():
         print(f"{BLUE}Test : {case['tests']}{RESET}")
         print(f"{BLUE}Input: {case['input']}{RESET}")
         print(f"{CYAN}{'=' * 97}{RESET}")
-        print(f"{BLUE}Expect: {case['expected_output']}{RESET}")
-        print(f"{BLUE}Actual_output: {result}{RESET}\n")
+        print(f"{BLUE}Expect_Output: {case['expected_output']}{RESET}")
+        print(f"{BLUE}Actual_Output: {result}{RESET}\n")
         print(f"{CYAN}{'=' * 97}{RESET}")
         if result != case["expected_output"]:
             print(f"{RED}Test case {i} failed.{RESET}")

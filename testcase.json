@@ -81,6 +81,11 @@
       "expected_output": "XXX-XXX-7894 XXXX-XXXX-XXXX-3456 s*******d@company.com DOB:XX/XX/25XX Address: XXX ซอยลาดกระบัง 19 ถนนลาดกระบัง แขวงลาดกระบัง เขตลาดกระบัง กรุงเทพฯ"
     },
     {
+      "tests": "field order switched (phone, then credit card, then email) - censor must identify each field by its content/pattern, not by its position, and mask it correctly regardless of order",
+      "input": "Address: 689 ซอยลาดกระบัง 19 ถนนลาดกระบัง แขวงลาดกระบัง เขตลาดกระบัง กรุงเทพฯ 093-245-7894 1234-5678-9012-3456 somchai.d@company.com DOB:25/12/2549 ",
+      "expected_output": "Address: XXX ซอยลาดกระบัง 19 ถนนลาดกระบัง แขวงลาดกระบัง เขตลาดกระบัง กรุงเทพฯ XXX-XXX-7894 XXXX-XXXX-XXXX-3456 s*******d@company.com DOB:XX/XX/25XX "
+    },
+    {
       "tests": "input is None instead of a string",
       "input": null,
       "expected_output": "Invalid input format"

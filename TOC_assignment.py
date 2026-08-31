@@ -4,28 +4,42 @@ def main(text_log: str):
     if(text_log is None or text_log == ""):
         return "Error : Input is empty"
     try:
+        credit_card, email, tel, date_of_birth, address = filter_input(text_log)
         #จาก assignmet วันเกิด จะขึ้นต้นด้วย (DOB:) เสมอ
         #จึงสามารถใช้เป็นจุดแบ่ง แบ่งข้อมูลออกเป็นสองส่วน
-        match = re.search(r'(.*?) DOB:(.*)', text_log, re.DOTALL)
+        # match = re.search(r'(.*?) DOB:(.*)', text_log, re.DOTALL)
 
-        #part 1 มีข้อมูลได้แก่ บัตรเครดิต อีเมล และเบอร์โทรศัพท์
-        part1 = match.group(1)
-        credit_card, email, tel = part1.split()
+        # #part 1 มีข้อมูลได้แก่ บัตรเครดิต อีเมล และเบอร์โทรศัพท์
+        # part1 = match.group(1)
+        # credit_card, email, tel = part1.split()
 
-        #part 2 มีข้อมูลได้แก่ วันเดือนปีเกิด และที่อยู่
-        part2 = match.group(2)
+        # #part 2 มีข้อมูลได้แก่ วันเดือนปีเกิด และที่อยู่
+        # part2 = match.group(2)
 
-        #จาก assignmet ที่อยู่ จะขึ้นต้นด้วย (Address:) เสมอ
-        #จึงสามารถใช้เป็นจุดแบ่ง แบ่งข้อมูลออกเป็นสองส่วน คือ วันเดือนปีเกิด และที่อยู่
-        part2_split = re.search(r'(.*?) Address: (.*)', part2, re.DOTALL)
+        # #จาก assignmet ที่อยู่ จะขึ้นต้นด้วย (Address:) เสมอ
+        # #จึงสามารถใช้เป็นจุดแบ่ง แบ่งข้อมูลออกเป็นสองส่วน คือ วันเดือนปีเกิด และที่อยู่
+        # part2_split = re.search(r'(.*?) Address: (.*)', part2, re.DOTALL)
 
-        date_of_birth = part2_split.group(1)
-        address = part2_split.group(2)
+        # date_of_birth = part2_split.group(1)
+        # address = part2_split.group(2)
 
         return f"{censor_credit_card(credit_card)} {censor_email(email)} {censor_tel(tel)} {censor_DOB(date_of_birth)} {censor_address(address)}"
     except Exception as error:
         return f"Error : {error}"
 
+def filter_input(input):
+    credit_card = re.search(r'(\d{4})-(\d{4})-(\d{4})-(\d{4})', input).group()
+    email = re.search(r'[\w\.-]+@[\w\.-]+', input).group()
+    tel = re.search(r'(\d{3})-(\d{3})-(\d{4})', input).group()
+    date_of_birth = re.search(r'DOB:(\d{1,2}/\d{1,2}/\d{4})', input).group(1)
+    temp = input
+    temp = temp.replace(f"DOB:{date_of_birth}", "")
+    temp = temp.replace(credit_card, "")
+    temp = temp.replace(email, "")
+    temp = temp.replace(tel, "")
+    address = re.search(r'Address: (.*)', temp).group(1)
+    print(date_of_birth)
+    return credit_card, email, tel, date_of_birth, address
 
 def censor_credit_card(credit_card):
     
