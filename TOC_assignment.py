@@ -7,50 +7,70 @@ def main(text_log: str):
 
 def masked_input(input):
     #find values
-    credit_card = find_credit_card(input)
-    email = find_email(input)
-    tel = find_tel(input)
-    date_of_birth = find_DOB(input)
-    address = find_address(input)
+    credit_card, email, tel, date_of_birth, address = find_details(input)
 
     masked_tel = censor_tel(tel)
     masked_credit_card = censor_credit_card(credit_card)
     masked_email = censor_email(email)
     masked_dob = censor_DOB(date_of_birth)
     masked_address = censor_address(address)
+
     input_buffer = input
-    
-    input_buffer = input_buffer.replace(f"Address: {address}", masked_address)
-    input_buffer = input_buffer.replace(tel, masked_tel)
-    input_buffer = input_buffer.replace(credit_card, masked_credit_card)
-    input_buffer = input_buffer.replace(email, masked_email)
-    input_buffer = input_buffer.replace(f"DOB:{date_of_birth}", masked_dob)
+    if address is not None:
+        input_buffer = input_buffer.replace(f"Address: {address}", masked_address)
+    if tel is not None:
+        input_buffer = input_buffer.replace(tel, masked_tel)
+    if credit_card is not None:
+        input_buffer = input_buffer.replace(credit_card, masked_credit_card)
+    if email is not None:
+        input_buffer = input_buffer.replace(email, masked_email)
+    if date_of_birth is not None:
+        input_buffer = input_buffer.replace(f"DOB:{date_of_birth}", masked_dob)
 
     return input_buffer
 def find_credit_card(input):
-    return re.search(r'(\d{4})-(\d{4})-(\d{4})-(\d{4})', input).group()
+    try:
+        return re.search(r'(\d{4})-(\d{4})-(\d{4})-(\d{4})', input).group()
+    except:
+        return ""
 
 def find_email(input):
-    return re.search(r'[\w\.-]+@[\w\.-]+', input).group()
+    try:
+        return re.search(r'[\w\.-]+@[\w\.-]+', input).group()
+    except:
+        return ""
+
 def find_tel(input):
-    return re.search(r'(\d{3})-(\d{3})-(\d{4})', input).group()
+    try:
+        return re.search(r'(\d{3})-(\d{3})-(\d{4})', input).group()
+    except:
+        return ""
 
 def find_DOB(input):
-    return re.search(r'DOB:(\d{1,2}/\d{1,2}/\d{4})', input).group(1)
+    try:
+        return re.search(r'DOB:(\d{1,2}/\d{1,2}/\d{4,})', input).group(1)
+    except:
+        return ""
 
-def find_address(input):
+def find_details(input):
     temp = input
-    credit_card = re.search(r'(\d{4})-(\d{4})-(\d{4})-(\d{4})', input).group()
-    email = re.search(r'[\w\.-]+@[\w\.-]+', input).group()
-    tel = re.search(r'(\d{3})-(\d{3})-(\d{4})', input).group()
-    date_of_birth = re.search(r'DOB:(\d{1,2}/\d{1,2}/\d{4})', input).group(1)
-
-    temp = temp.replace(f"DOB:{date_of_birth}", "")
-    temp = temp.replace(credit_card, "")
-    temp = temp.replace(email, "")
-    temp = temp.replace(tel, "")
-
-    return re.search(r'Address: (.*)', temp).group(1).strip()
+    credit_card = find_credit_card(input)
+    email = find_email(input)
+    tel = find_tel(input)
+    date_of_birth = find_DOB(input)
+    if date_of_birth is not None:
+        temp = temp.replace(f"DOB:{date_of_birth}", "")
+    if credit_card is not None:
+        temp = temp.replace(credit_card, "")
+    if email is not None:
+        temp = temp.replace(email, "")
+    if tel is not None:
+        temp = temp.replace(tel, "")
+    try:
+        address = re.search(r'Address: (.*)', temp).group(1).strip()
+        return credit_card, email, tel, date_of_birth, address
+    except:
+        return credit_card, email, tel, date_of_birth, ""
 
 def censor_credit_card(credit_card):
     if credit_card is None:
