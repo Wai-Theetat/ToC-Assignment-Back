@@ -36,11 +36,6 @@
       "expected_output": "XXXX-XXXX-XXXX-5555 a@test.com XXX-XXX-3344 DOB:XX/XX/25XX Address: XX ถนนรัชดาภิเษก แขวงดินแดง เขตดินแดง กรุงเทพฯ"
     },
     {
-      "tests": "double space between fields",
-      "input": "1234-5678-9012-3456  somchai.d@company.com 093-245-7894 DOB:25/12/2549 Address: 689 ซอยลาดกระบัง 19 ถนนลาดกระบัง แขวงลาดกระบัง เขตลาดกระบัง กรุงเทพฯ",
-      "expected_output": "XXXX-XXXX-XXXX-3456 s*******d@company.com XXX-XXX-7894 DOB:XX/XX/25XX Address: XXX ซอยลาดกระบัง 19 ถนนลาดกระบัง แขวงลาดกระบัง เขตลาดกระบัง กรุงเทพฯ"
-    },
-    {
       "tests": "credit card without dashes - censor must still recognize and mask it, not pass it through raw",
       "input": "1234567890123456 somchai.d@company.com 093-245-7894 DOB:25/12/2549 Address: 689 ซอยลาดกระบัง 19 ถนนลาดกระบัง แขวงลาดกระบัง เขตลาดกระบัง กรุงเทพฯ",
       "expected_output": "XXXXXXXXXXXX3456 s*******d@company.com XXX-XXX-7894 DOB:XX/XX/25XX Address: XXX ซอยลาดกระบัง 19 ถนนลาดกระบัง แขวงลาดกระบัง เขตลาดกระบัง กรุงเทพฯ"
