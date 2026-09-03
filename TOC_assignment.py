@@ -16,18 +16,15 @@ def masked_input(input):
     masked_address = censor_address(address)
 
     input_buffer = input
-    if address is not None:
-        input_buffer = input_buffer.replace(f"Address: {address}", masked_address)
-    if tel is not None:
-        input_buffer = input_buffer.replace(tel, masked_tel)
-    if credit_card is not None:
-        input_buffer = input_buffer.replace(credit_card, masked_credit_card)
-    if email is not None:
-        input_buffer = input_buffer.replace(email, masked_email)
-    if date_of_birth is not None:
-        input_buffer = input_buffer.replace(f"DOB:{date_of_birth}", masked_dob)
+
+    if address: input_buffer = input_buffer.replace(f"Address: {address}", masked_address)
+    if tel: input_buffer = input_buffer.replace(tel, masked_tel)
+    if credit_card: input_buffer = input_buffer.replace(credit_card, masked_credit_card)
+    if email: input_buffer = input_buffer.replace(email, masked_email)
+    if date_of_birth: input_buffer = input_buffer.replace(f"DOB:{date_of_birth}", masked_dob)
 
     return input_buffer
+
 def find_credit_card(input):
     try:
         return re.search(r'(\d{4})-(\d{4})-(\d{4})-(\d{4})', input).group()
@@ -54,18 +51,17 @@ def find_DOB(input):
 
 def find_details(input):
     temp = input
+
     credit_card = find_credit_card(input)
     email = find_email(input)
     tel = find_tel(input)
     date_of_birth = find_DOB(input)
-    if date_of_birth is not None:
-        temp = temp.replace(f"DOB:{date_of_birth}", "")
-    if credit_card is not None:
-        temp = temp.replace(credit_card, "")
-    if email is not None:
-        temp = temp.replace(email, "")
-    if tel is not None:
-        temp = temp.replace(tel, "")
+
+    if date_of_birth: temp = temp.replace(f"DOB:{date_of_birth}", "")
+    if credit_card: temp = temp.replace(credit_card, "")
+    if email: temp = temp.replace(email, "")
+    if tel: temp = temp.replace(tel, "")
+    
     try:
         address = re.search(r'Address: (.*)', temp).group(1).strip()
         return credit_card, email, tel, date_of_birth, address
