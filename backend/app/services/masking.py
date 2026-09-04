@@ -116,6 +116,20 @@ def mask_address(address: str) -> str:
     return f"{newformat}"
 
 
+def filter_input(input):
+    credit_card = re.search(r'(\d{4})-(\d{4})-(\d{4})-(\d{4})', input).group()
+    email = re.search(r'[\w\.-]+@[\w\.-]+', input).group()
+    tel = re.search(r'(\d{3})-(\d{3})-(\d{4})', input).group()
+    date_of_birth = re.search(r'DOB:(\d{1,2}/\d{1,2}/\d{4})', input).group(1)
+
+    temp = input
+    temp = temp.replace(f"DOB:{date_of_birth}", "")
+    temp = temp.replace(credit_card, "")
+    temp = temp.replace(email, "")
+    temp = temp.replace(tel, "")
+    address = re.search(r'Address: (.*)', temp).group(1)
+    
+    return credit_card, email, tel, date_of_birth, address
 def mask_text(text: str) -> str:
     """
     Auto-detect and mask sensitive patterns in free-form text using regex only.
