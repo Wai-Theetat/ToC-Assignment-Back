@@ -130,3 +130,87 @@ def filter_input(input):
     address = re.search(r'Address: (.*)', temp).group(1)
     
     return credit_card, email, tel, date_of_birth, address
+def mask_text(text: str) -> str:
+    """
+    Auto-detect and mask sensitive patterns in free-form text using regex only.
+    No labels or prefixes required — patterns are identified purely by their format.
+
+    Order matters: credit card must come before phone (both use dashes + digits).
+    """
+
+    # 1. Credit card: 4-4-4-4 digit groups  →  XXXX-XXXX-XXXX-<last4>
+    #    Must run BEFORE phone to avoid partial matches on the dashes.
+    result = re.sub(
+        r'\d{4}-\d{4}-\d{4}-(\d{4})',
+        r'XXXX-XXXX-XXXX-\1',
+        text
+    )
+
+    # 2. Phone: 3-3-4 digit groups  →  XXX-XXX-<last4>
+    result = re.sub(
+        r'\d{3}-\d{3}-(\d{4})',
+        r'XXX-XXX-\1',
+        result
+    )
+
+    # 3. Email: local@domain  →  first + stars + last @ domain
+    #    Identified purely by @ and domain-like suffix.
+    def _mask_email(match):
+        local = match.group(1)
+        domain = match.group(2)
+        if len(local) <= 2:
+            return match.group(0)
+        return local[0] + '*' * (len(local) - 2) + local[-1] + '@' + domain
+
+    result = re.sub(
+        r'([\w.+-]+)@([\w.-]+\.[a-zA-Z]{2,})',
+        _mask_email,
+        result
+    )
+
+    # 4. Date of birth: d/d/dddd  →  XX/XX/<year_prefix>XX
+    #    Identified by day/month/year format. Keeps first 2 digits of year.
+    def _mask_dob(match):
+        year_prefix = match.group(3)
+        year_suffix = match.group(4)
+        return f"XX/XX/{year_prefix}{'X' * len(year_suffix)}"
+
+    result = re.sub(
+        r'(\d{1,2})/(\d{1,2})/(\d{2})(\d+)',
+        _mask_dob,
+        result
+    )
+
+    # 5. Address house number — scan each number, look 150 chars ahead for address keywords.
+    #    If keyword found → this is a house number → mask it, then skip 150 chars forward.
+    #    The 150-char skip ensures soi/street numbers inside the same address are never checked.
+    #    Works for whole-JSON input and multiple addresses. Handles X/Y format (e.g. 89/1).
+    _ADDRESS_KEYWORDS = re.compile(
+        r'ซอย|ถนน|แขวง|เขต|หมู่|ตำบล|อำเภอ|จังหวัด|หมู่บ้าน'
+        r'|\b[Ss]treet\b|\b[Ss]t\b|\b[Aa]venue\b|\b[Aa]ve\b|\b[Rr]oad\b|\b[Rr]d\b'
+        r'|\b[Ll]ane\b|\b[Ll]n\b|\b[Dd]rive\b|\b[Dd]r\b|\b[Bb]oulevard\b|\b[Bb]lvd\b'
+        r'|\b[Ww]ay\b|\b[Cc]ourt\b|\b[Cc]t\b|\b[Pp]lace\b|\b[Pp]l\b|\b[Aa]lley\b'
+    )
+
+    parts = []
+    pos = 0
+    skip_until = 0
+
+    for m in re.finditer(r'\d+(?:/\d+)?', result):
+        start, end = m.start(), m.end()
+        if start < skip_until:
+            continue
+        # Short lookahead (15 chars): house number is always directly before a keyword
+        # with at most one space between them (e.g. "689 ซอย" = 4 chars away).
+        # Long skip (150 chars): skip over soi/street numbers inside the same address.
+        lookahead = result[end:end + 15]
+        if _ADDRESS_KEYWORDS.search(lookahead):
+            parts.append(result[pos:start])
+            parts.append(re.sub(r'\d', 'X', m.group()))
+            pos = end
+            skip_until = end + 150
+
+    parts.append(result[pos:])
+    result = ''.join(parts)
+
+    return result
