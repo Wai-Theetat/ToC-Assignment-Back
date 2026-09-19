@@ -1,32 +1,76 @@
 import re
 
 def main(text_log: str):
+    if(text_log is None or text_log == ""):
+        return "Error : Input is empty"
+    return masked_input(text_log)
+
+def masked_input(input):
+    #find values
+    credit_card, email, tel, date_of_birth, address = find_details(input)
+
+    masked_tel = censor_tel(tel)
+    masked_credit_card = censor_credit_card(credit_card)
+    masked_email = censor_email(email)
+    masked_dob = censor_DOB(date_of_birth)
+    masked_address = censor_address(address)
+
+    input_buffer = input
+
+    if address: input_buffer = input_buffer.replace(f"Address: {address}", masked_address)
+    if tel: input_buffer = input_buffer.replace(tel, masked_tel)
+    if credit_card: input_buffer = input_buffer.replace(credit_card, masked_credit_card)
+    if email: input_buffer = input_buffer.replace(email, masked_email)
+    if date_of_birth: input_buffer = input_buffer.replace(f"DOB:{date_of_birth}", masked_dob)
+
+    return input_buffer
+
+def find_credit_card(input):
     try:
-        #จาก assignmet วันเกิด จะขึ้นต้นด้วย (DOB:) เสมอ
-        #จึงสามารถใช้เป็นจุดแบ่ง แบ่งข้อมูลออกเป็นสองส่วน
-        match = re.search(r'(.*?) DOB:(.*)', text_log, re.DOTALL)
+        return re.search(r'(\d{4})-(\d{4})-(\d{4})-(\d{4})', input).group()
+    except:
+        return ""
 
-        #part 1 มีข้อมูลได้แก่ บัตรเครดิต อีเมล และเบอร์โทรศัพท์
-        part1 = match.group(1)
-        credit_card, email, tel = part1.split()
+def find_email(input):
+    try:
+        return re.search(r'[\w\.-]+@[\w\.-]+', input).group()
+    except:
+        return ""
 
-        #part 2 มีข้อมูลได้แก่ วันเดือนปีเกิด และที่อยู่
-        part2 = match.group(2)
+def find_tel(input):
+    try:
+        return re.search(r'(\d{3})-(\d{3})-(\d{4})', input).group()
+    except:
+        return ""
 
-        #จาก assignmet ที่อยู่ จะขึ้นต้นด้วย (Address:) เสมอ
-        #จึงสามารถใช้เป็นจุดแบ่ง แบ่งข้อมูลออกเป็นสองส่วน คือ วันเดือนปีเกิด และที่อยู่
-        part2_split = re.search(r'(.*?) Address: (.*)', part2, re.DOTALL)
+def find_DOB(input):
+    try:
+        return re.search(r'DOB:(\d{1,2}/\d{1,2}/\d{4,})', input).group(1)
+    except:
+        return ""
 
-        date_of_birth = part2_split.group(1)
-        address = part2_split.group(2)
+def find_details(input):
+    temp = input
 
-        return f"{censor_credit_card(credit_card)} {censor_email(email)} {censor_tel(tel)} {censor_DOB(date_of_birth)} {censor_address(address)}"
-    except Exception as error:
-        return f"Error : {error}"
+    credit_card = find_credit_card(input)
+    email = find_email(input)
+    tel = find_tel(input)
+    date_of_birth = find_DOB(input)
 
+    if date_of_birth: temp = temp.replace(f"DOB:{date_of_birth}", "")
+    if credit_card: temp = temp.replace(credit_card, "")
+    if email: temp = temp.replace(email, "")
+    if tel: temp = temp.replace(tel, "")
+    
+    try:
+        address = re.search(r'Address: (.*)', temp).group(1).strip()
+        return credit_card, email, tel, date_of_birth, address
+    except:
+        return credit_card, email, tel, date_of_birth, ""
 
 def censor_credit_card(credit_card):
-    
+    if credit_card is None:
+        return ""
     #จาก assignment บัตรเครดิต จะมาในรูปแบบ (ตัวเลข 4 ตัว - ตัวเลข 4 ตัว - ตัวเลข 4 ตัว - ตัวเลข 4 ตัว)
     #ผลลัพธ์ที่ต้องการคือเซ็นเซอร์ตัวเลข 3 กลุ่มแรก เหลือไว้แค่ตัวเลขกลุ่มสุดท้าย
 
@@ -41,7 +85,8 @@ def censor_credit_card(credit_card):
     return f"{newFormat}"
 
 def censor_tel(tel):
-    
+    if tel is None:
+        return ""
     #จาก assignment เบอร์โทรศัพท์ จะมาในรูปแบบ (ตัวเลข 3 ตัว - ตัวเลข 3 ตัว - ตัวเลข 4 ตัว)
     #ผลลัพธ์ที่ต้องการคือเซ็นเซอร์ตัวเลข 2 กลุ่มแรก เหลือไว้แค่ตัวเลขกลุ่มสุดท้าย
 
@@ -58,6 +103,8 @@ def censor_tel(tel):
     return f"{newFormat}"
 
 def censor_email(email):
+    if email is None:
+        return ""
     #จาก assignment จะมีอีเมลมาด้วย โดยมีรูปแบบคือจะขึ้นต้นด้วยคำอะไรก็ได้ขั้นด้วย @ แล้วตามด้วย domain name เช่น somchai.d@company.com
     #ผลลัพธ์ที่ต้องการคือ ตัวอักษรตัวแรก เซ็นเซอร์กลุ่มตัวอักษรตรงกลางทั้งหมด และจนถึงตัวอักษรก่อนตัวสุดท้ายก่อน @ 
 
@@ -91,6 +138,8 @@ def censor_email(email):
     return newformat
 
 def censor_DOB(DOB):
+    if DOB is None:
+        return ""
     #จาก assignment วันเกิด จะมาในรูปแบบ : วัน(ตัวเลข)/เดือน(ตัวเลข)/ปี(ตัวเลข) เช่น 25/12/2549
     #ผลลัพธ์ที่ต้องการคือ XX/XX/(ตัวเลขสองตัวแรกของปีที่ไม่เซ็นเซอร์)XX 
 
@@ -119,6 +168,8 @@ def censor_DOB(DOB):
     return f"DOB:{newFormat}"
 
 def censor_address(address):
+    if address is None:
+        return ""
     #จาก assignment address จะมาในรูปแบบ : Address: บ้านเลขที่ ซอย ถนน แขวง เขต จังหวัด และอื่นๆ
     #เช่น 689 ซอยลาดกระบัง 19 ถนนลาดกระบัง แขวงลาดกระบัง เขตลำดกระบัง กรุงเทพฯ"
 
@@ -142,6 +193,6 @@ def censor_address(address):
 
 
 if __name__ == "__main__":
-    text_log : str = "1234-5678-9012-3456 somchai.d@company.com 093-245-7894 DOB:25/12/2549 Address: 689 ซอยลาดกระบัง 19 ถนนลาดกระบัง แขวงลาดกระบัง เขตลำดกระบัง กรุงเทพฯ"
+    text_log : str = "Address: 689 ซอยลาดกระบัง 19 ถนนลาดกระบัง แขวงลาดกระบัง เขตลาดกระบัง กรุงเทพฯ 093-245-7894 1234-5678-9012-3456 somchai.d@company.com DOB:25/12/2549"
     result = main(text_log)
     print(result)
