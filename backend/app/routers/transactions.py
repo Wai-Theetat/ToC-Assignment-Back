@@ -52,7 +52,7 @@ def deposit(user_id: int, req: DepositWithdrawRequest, db: Session = Depends(get
         old_money=user.money,
         updated_money=updated_money,
         transaction_amount=req.amount,
-        status="success",
+        status="deposit",
     )
     user.money = updated_money
     db.add(newTransaction)
@@ -89,7 +89,7 @@ def withdraw(user_id: int, req: DepositWithdrawRequest, db: Session = Depends(ge
         old_money=user.money,
         updated_money=updated_money,
         transaction_amount=req.amount,
-        status="success",
+        status="withdraw",
     )
     user.money = updated_money
     db.add(newTransaction)
@@ -119,5 +119,6 @@ def get_transaction_history(user_id: int, db: Session = Depends(get_db)):
             updated_money=transaction.updated_money,
             transaction_amount=transaction.transaction_amount,
             status=transaction.status,
+            created_at=transaction.created_at,
         ) for transaction in transactions]
     return transaction_responses

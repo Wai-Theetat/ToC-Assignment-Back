@@ -191,6 +191,12 @@ def censor_address(address):
     #เพิ่ม string Address: กลับเข้าไปเหมือนเดิม เนื่องจากตัดออกไปก่อนเข้าฟังก์ชัน
     return f"Address: {newformat}"
 
+mask_text = masked_text
+mask_email = censor_email
+mask_tel = censor_tel
+mask_dob = censor_DOB
+mask_address = censor_address
+mask_credit_card = censor_credit_card
 
 if __name__ == "__main__":
     text_log : str = "Address: 689 ซอยลาดกระบัง 19 ถนนลาดกระบัง แขวงลาดกระบัง เขตลาดกระบัง กรุงเทพฯ 093-245-7894 1234-5678-9012-3456 somchai.d@company.com DOB:25/12/2549"
