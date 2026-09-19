@@ -11,6 +11,7 @@ from app.services.masking import (
     mask_email,
     mask_tel,
 )
+from app.utils.auth import get_current_user
 
 router = APIRouter(prefix="/users", tags=["Users"])
 
@@ -21,7 +22,13 @@ router = APIRouter(prefix="/users", tags=["Users"])
 ```
 fetch("http://localhost:8080/users/1").then(r => r.json()).then(console.log)
 ```""")
-def get_user_profile(user_id: int, db: Session = Depends(get_db)):
+def get_user_profile(
+    user_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    if user_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Forbidden")
     
     getUser = db.query(User).filter(User.id == user_id).first()
     if not getUser:
@@ -46,7 +53,14 @@ fetch("http://localhost:8080/users/1", {
   body: JSON.stringify({ email: "new@email.com" }),
 }).then(r => r.json()).then(console.log)
 ```""")
-def update_user(user_id: int, req: UserUpdate, db: Session = Depends(get_db)):
+def update_user(
+    user_id: int,
+    req: UserUpdate,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    if user_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Forbidden")
     getUser = db.query(User).filter(User.id == user_id).first()
     if not getUser:
         raise HTTPException(status_code=404, detail="User not found")
@@ -68,7 +82,13 @@ fetch("http://localhost:8080/users/1", {
   method: "DELETE",
 }).then(r => r.json()).then(console.log)
 ```""")
-def delete_user(user_id: int, db: Session = Depends(get_db)):
+def delete_user(
+    user_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    if user_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Forbidden")
     getUser = db.query(User).filter(User.id == user_id).first()
     if not getUser:
         raise HTTPException(status_code=404, detail="User not found")

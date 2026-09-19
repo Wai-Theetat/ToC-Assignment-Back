@@ -11,6 +11,7 @@ from app.schemas.schemas import (
     TransactionResponse,
 )
 from app.services.masking import mask_credit_card
+from app.utils.auth import get_current_user
 
 router = APIRouter(prefix="/transactions", tags=["Transactions"])
 
@@ -21,7 +22,13 @@ router = APIRouter(prefix="/transactions", tags=["Transactions"])
 ```
 fetch("http://localhost:8080/transactions/1/balance").then(r => r.json()).then(console.log)
 ```""")
-def get_balance(user_id: int, db: Session = Depends(get_db)):
+def get_balance(
+    user_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    if user_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Forbidden")
     # TODO: implement get balance
     return BalanceResponse(username="somchai", money=500.0)
 
@@ -36,7 +43,14 @@ fetch("http://localhost:8080/transactions/1/deposit", {
   body: JSON.stringify({ amount: 500 }),
 }).then(r => r.json()).then(console.log)
 ```""")
-def deposit(user_id: int, req: DepositWithdrawRequest, db: Session = Depends(get_db)):
+def deposit(
+    user_id: int,
+    req: DepositWithdrawRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    if user_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Forbidden")
     # TODO: implement deposit
     return {"message": "deposited", "amount": req.amount}
 
@@ -51,7 +65,14 @@ fetch("http://localhost:8080/transactions/1/withdraw", {
   body: JSON.stringify({ amount: 100 }),
 }).then(r => r.json()).then(console.log)
 ```""")
-def withdraw(user_id: int, req: DepositWithdrawRequest, db: Session = Depends(get_db)):
+def withdraw(
+    user_id: int,
+    req: DepositWithdrawRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    if user_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Forbidden")
     # TODO: implement withdraw
     return {"message": "withdrawn", "amount": req.amount}
 
@@ -62,6 +83,12 @@ def withdraw(user_id: int, req: DepositWithdrawRequest, db: Session = Depends(ge
 ```
 fetch("http://localhost:8080/transactions/1/history").then(r => r.json()).then(console.log)
 ```""")
-def get_transaction_history(user_id: int, db: Session = Depends(get_db)):
+def get_transaction_history(
+    user_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    if user_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Forbidden")
     # TODO: implement get transaction history
     return []

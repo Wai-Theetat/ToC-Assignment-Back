@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models.models import User
 from app.schemas.schemas import LoginRequest, LoginResponse, RegisterRequest
+from app.utils.auth import create_access_token
 
 router = APIRouter(prefix="/auth", tags=["Auth"])
 
@@ -70,6 +71,12 @@ def login(req: LoginRequest, db: Session = Depends(get_db)):
         raise HTTPException(status_code=400, detail="Invalid username or password")
 
     # 3. 
-    return LoginResponse(message="login success", user_id=user.id, username=user.username)
+    return LoginResponse(
+      message="login success",
+      user_id=user.id,
+      username=user.username,
+      access_token=create_access_token(user.id),
+      token_type="bearer",
+    )
     
 

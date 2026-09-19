@@ -25,6 +25,8 @@ class LoginResponse(BaseModel):
     message: str
     user_id: int
     username: str
+    access_token: str
+    token_type: str
 
 
 # --- User ---
