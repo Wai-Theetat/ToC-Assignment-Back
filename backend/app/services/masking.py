@@ -165,7 +165,7 @@ def censor_DOB(DOB):
     
     newFormat = re.sub(r'(\d{1,2})/(\d{1,2})/(\d{2})(\d+)', mask_DOB, DOB)
     #เพิ่ม string DOB: กลับเข้าไปเหมือนเดิม เนื่องจากตัดออกไปก่อนเข้าฟังก์ชัน
-    return f"DOB:{newFormat}"
+    return newFormat
 
 def censor_address(address):
     if address is None:
@@ -189,7 +189,7 @@ def censor_address(address):
     
     newformat = re.sub(r'\d+(?:/\d+)?', mask_digits, address, count=1)
     #เพิ่ม string Address: กลับเข้าไปเหมือนเดิม เนื่องจากตัดออกไปก่อนเข้าฟังก์ชัน
-    return f"Address: {newformat}"
+    return newformat
 
 mask_text = masked_text
 mask_email = censor_email

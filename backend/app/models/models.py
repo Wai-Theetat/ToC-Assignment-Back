@@ -21,7 +21,7 @@ class User(Base):
     credit_card: Mapped[str] = mapped_column(String, nullable=False)
     money: Mapped[float] = mapped_column(Float, default=0.0)
 
-    transactions: Mapped[list["Transaction"]] = relationship(back_populates="user")
+    transactions: Mapped[list["Transaction"]] = relationship(back_populates="user", cascade="all, delete-orphan")
 
 
 class Transaction(Base):
