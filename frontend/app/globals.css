@@ -1,0 +1,159 @@
+@import "tailwindcss";
+
+@theme {
+  /* ── Primary ─────────────────────────────── */
+  --color-primary-900: #14532d;
+  --color-primary-500: #22c55e;
+  --color-primary-hover: #16a34a;
+
+  /* ── Secondary ───────────────────────────── */
+  --color-secondary-200: #bbf7d0;
+  --color-secondary-100: #dcfce7;
+  --color-secondary-mint: #a7f3d0;
+
+  /* ── Background / border ─────────────────── */
+  --color-bg-panel: #f0fdf4;
+  --color-bg-app: #F0FDFD;
+  --color-line: #f1f5f9;
+
+  /* ── Text ────────────────────────────────── */
+  --color-text-primary: #1f2937;
+  --color-text-muted: #64748b;
+  --color-text-on-primary: #ffffff;
+
+  /* ── Exit / danger ───────────────────────── */
+  --color-danger: #dc2626;
+  --color-danger-hover: #fb7185;
+  --color-danger-bg: #fee2e2;
+
+  /* ── Accent / info ───────────────────────── */
+  --color-accent-mint: #2ee59b;
+  --color-accent-deep: #0f766e;
+  --color-info: #0e7490;
+
+  /* ── Type scale (size / weight) ──────────── */
+  --text-display: 2.5rem;
+  /* 40 */
+  --text-display--line-height: 1.2;
+  --text-display--font-weight: 500;
+
+  --text-amount: 1.75rem;
+  /* 28 */
+  --text-amount--line-height: 1.25;
+  --text-amount--font-weight: 500;
+
+  --text-h1: 1.5rem;
+  /* 24 */
+  --text-h1--line-height: 1.3;
+  --text-h1--font-weight: 500;
+
+  --text-h2: 1.25rem;
+  /* 20 */
+  --text-h2--line-height: 1.4;
+  --text-h2--font-weight: 500;
+
+  --text-body: 1rem;
+  /* 16 */
+  --text-body--line-height: 1.5;
+  --text-body--font-weight: 400;
+
+  --text-label: 0.875rem;
+  /* 14 */
+  --text-label--line-height: 1.45;
+  --text-label--font-weight: 400;
+
+  --text-caption: 0.75rem;
+  /* 12 */
+  --text-caption--line-height: 1.4;
+  --text-caption--font-weight: 400;
+
+  /* ── Fonts ───────────────────────────────── */
+  --font-sans: var(--font-app-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+
+  /* ── Elevation (green-tinted, not neutral grey) ── */
+  --shadow-panel: 0 1px 2px rgb(20 83 45 / 0.04),
+    0 16px 40px -20px rgb(20 83 45 / 0.25);
+  --shadow-raised: 0 2px 4px rgb(20 83 45 / 0.06),
+    0 24px 60px -24px rgb(20 83 45 / 0.35);
+}
+
+@layer base {
+  :root {
+    color-scheme: light;
+  }
+
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    background-color: var(--color-bg-app);
+    color: var(--color-text-primary);
+    font-family: var(--font-sans);
+    font-size: var(--text-body);
+    line-height: var(--text-body--line-height);
+  }
+
+  /* Default border color for `border` utilities */
+  *,
+  ::after,
+  ::before {
+    border-color: var(--color-line);
+  }
+}
+
+@layer components {
+  .panel {
+    background-color: var(--color-bg-panel);
+    border: 1px solid var(--color-line);
+    border-radius: 1rem;
+  }
+
+  /* Soft mint wash behind the page content. Purely decorative. */
+  .app-glow {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background:
+      radial-gradient(
+        42rem 28rem at 15% 0%,
+        color-mix(in oklab, var(--color-secondary-mint) 55%, transparent),
+        transparent 70%
+      ),
+      radial-gradient(
+        34rem 26rem at 100% 100%,
+        color-mix(in oklab, var(--color-accent-mint) 22%, transparent),
+        transparent 70%
+      );
+  }
+
+  /* Small square brand mark. */
+  .brand-mark {
+    display: grid;
+    place-items: center;
+    width: 3.5rem;
+    height: 3.5rem;
+    border-radius: 1rem;
+    background-color: var(--color-primary-500);
+    color: var(--color-text-on-primary);
+    box-shadow: 0 8px 20px -8px var(--color-primary-500);
+  }
+
+  /* Uppercase tracked-out subtitle. */
+  .eyebrow {
+    font-size: var(--text-label);
+    font-weight: 500;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--color-text-muted);
+  }
+
+  /* Money figures: keep digits from jittering on update */
+  .amount {
+    font-size: var(--text-amount);
+    line-height: var(--text-amount--line-height);
+    font-weight: var(--text-amount--font-weight);
+    font-variant-numeric: tabular-nums;
+  }
+}
