@@ -26,21 +26,22 @@ creditCard: "",
 };
 
 export default function SignUpPage() {
-const router = useRouter();
-const [step, setStep] = useState<"input" | "confirmation">(() => {
-	if (typeof window !== "undefined") {
-		const params = new URLSearchParams(window.location.search);
-		if (params.get("step") === "confirmation") return "confirmation";
-	}
-	return "input";
-});
-const [rawInfo, setRawInfo] = useState("");
-const [formData, setFormData] = useState<FormData>(DEFAULT_FORM_DATA);
-const [isCensored, setIsCensored] = useState(true);
-const [error, setError] = useState("");
-const [loading, setLoading] = useState(false);
+	const router = useRouter();
+	const [step, setStep] = useState<"input" | "confirmation">(() => {
+		if (typeof window !== "undefined") {
+			const params = new URLSearchParams(window.location.search);
+			if (params.get("step") === "confirmation") return "confirmation";
+		}
+		return "input";
+	});
+	const [rawInfo, setRawInfo] = useState("");
+	const [unmarkedForm, setUnmarkedForm] = useState<FormData>(DEFAULT_FORM_DATA);
+	const [markedForm, setMarkedForm] = useState<FormData>(DEFAULT_FORM_DATA);
+	const [isCensored, setIsCensored] = useState(true);
+	const [error, setError] = useState("");
+	const [loading, setLoading] = useState(false);
 
-	const handleProceedToConfirmation = () => {
+	const handleProceedToConfirmation = async () => {
 		setError("");
 		if (!rawInfo.trim()) {
 			setError("Please enter your info first");
@@ -49,60 +50,61 @@ const [loading, setLoading] = useState(false);
 
 		const lines = rawInfo.split("\n").map((l) => l.trim()).filter(Boolean);
 
-		const emailMatch = rawInfo.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/);
-		const phoneMatch = rawInfo.match(/(?:0\d{1,2}[-\s]?\d{3}[-\s]?\d{4}|\b\d{3}-\d{3}-\d{4}\b|\b0\d{8,9}\b)/);
-		const cardMatch = rawInfo.match(/(?:\d{4}-){3}\d{4}|\b\d{16}\b/);
-		const dobMatch = rawInfo.match(/(?:DOB:\s*)?(\d{1,2}[/-]\d{1,2}[/-]\d{2,7})/i);
-		const addressPrefixMatch = rawInfo.match(/Address:\s*([^\n\r]+)/i);
+		let username = lines[0];
+		let password = lines[1];
 
-		let username = "";
-		let password = "";
+		let bodyString = lines.slice(2).join(" ");
+		console.log(bodyString)
+		const res = await fetch("http://localhost:8080/mask", {
+			method: "POST",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify({
+				text : bodyString
+			}),
+		});
+// 		{
+// {
+//   "original_email": "Som@gmail.com",
+//   "original_date_of_birth": "25/12/2549",
+//   "original_phone_number": "080-666-6666",
+//   "original_address": "689 ซอย ลาดกระบัง",
+//   "original_credit_card": "1234-1234-1234-1234",
+//   "email": "S*m@gmail.com",
+//   "date_of_birth": "XX/XX/25XX",
+//   "phone_number": "XXX-XXX-6666",
+//   "address": "XXX ซอย ลาดกระบัง",
+//   "credit_card": "XXXX-XXXX-XXXX-1234"
+// }
+// }
+		const data = await res.json();
 
-		// If multiline structured input (line 0 = username, line 1 = password)
-		if (lines.length >= 2 && !lines[0].includes("@") && !/^Address:/i.test(lines[0]) && !/^DOB:/i.test(lines[0])) {
-			username = lines[0];
-			password = lines[1];
-		} else if (emailMatch) {
-			// If single-line bank log, derive username from email prefix and assign default password
-			username = emailMatch[0].split("@")[0].replace(/[^a-zA-Z0-9_]/g, "_");
-			password = "password123";
-		} else {
-			username = lines[0] || "user";
-			password = "password123";
-		}
-
-		let extractedAddress = "";
-		if (addressPrefixMatch) {
-			extractedAddress = `Address: ${addressPrefixMatch[1].trim()}`;
-		} else {
-			extractedAddress =
-				lines.find(
-					(l) =>
-						l !== lines[0] &&
-						l !== lines[1] &&
-						!l.includes(emailMatch?.[0] || "___") &&
-						!l.includes(phoneMatch?.[0] || "___") &&
-						!l.includes(cardMatch?.[0] || "___") &&
-						!(dobMatch && l.includes(dobMatch[0]))
-				) || "";
-		}
-
-		const parsed: FormData = {
+		const markedForm: FormData = {
 			username,
 			password,
-			email: emailMatch?.[0] || "",
-			phone: phoneMatch?.[0] || "",
-			dateOfBirth: dobMatch ? (dobMatch[0].toUpperCase().startsWith("DOB:") ? dobMatch[0] : `DOB:${dobMatch[1]}`) : "",
-			address: extractedAddress,
-			creditCard: cardMatch?.[0] || "",
+			email: data["email"] ?? "",
+			phone: data["phone_number"] ?? "",
+			dateOfBirth: data["date_of_birth"] ? `${data["date_of_birth"]}` : "",
+			address: data["address"] ? `${data["address"]}` : "",
+			creditCard: data["credit_card"] ?? "",
 		};
 
-		if (!parsed.username || !parsed.email) {
+		const unmarkedForm : FormData = {
+			username,
+			password,
+			email: data["original_email"] ?? "",
+			phone: data["original_phone_number"] ?? "",
+			dateOfBirth: data["original_date_of_birth"] ? `${data["original_date_of_birth"]}` : "",
+			address: data["original_address"] ? `${data["original_address"]}` : "",
+			creditCard: data["original_credit_card"] ?? "",
+		}
+
+		if (!markedForm.username || !markedForm.email) {
 			setError("Couldn't find username or email in your info. Check the format.");
 			return;
 		}
 
-		setFormData(parsed);
+		setMarkedForm(markedForm);
+		setUnmarkedForm(unmarkedForm);
 		setStep("confirmation");
 	};
 
@@ -114,13 +116,13 @@ const [loading, setLoading] = useState(false);
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
 				body: JSON.stringify({
-					username: formData.username,
-					password: formData.password,
-					email: formData.email,
-					tel: formData.phone,
-					date_of_birth: formData.dateOfBirth,
-					address: formData.address,
-					credit_card: formData.creditCard,
+					username: unmarkedForm.username,
+					password: unmarkedForm.password,
+					email: unmarkedForm.email,
+					tel: unmarkedForm.phone,
+					date_of_birth: unmarkedForm.dateOfBirth,
+					address: unmarkedForm.address,
+					credit_card: unmarkedForm.creditCard,
 				}),
 			});
 			const data = await res.json();
@@ -138,58 +140,24 @@ const [loading, setLoading] = useState(false);
 		}
 	};
 
-	// Regex Masking functions following assignment specification & QA test cases
-	const getCensoredEmail = (email: string) => {
-		if (!isCensored || !email) return email;
-		// Mask username characters between first and last with '*'
-		return email.replace(/^([\w.-])(.*)([\w.-])(?=@)/, (_, first, middle, last) => {
-			return `${first}${"*".repeat(middle.length)}${last}`;
-		});
+	const getCensoredEmail = (masked: string, unmasked: string) => {
+		return isCensored ? masked : unmasked;
 	};
 
-	const getCensoredPhone = (phone: string) => {
-		if (!isCensored || !phone) return phone;
-		const trimmed = phone.trim();
-		if (/^\d{3}-\d{3}-\d{4}$/.test(trimmed)) {
-			return trimmed.replace(/^(\d{3})-(\d{3})-(\d{4})$/, "XXX-XXX-$3");
-		}
-		if (/^\d{10}$/.test(trimmed)) {
-			return trimmed.replace(/^(\d{6})(\d{4})$/, "XXX-XXX-$2");
-		}
-		return trimmed.replace(/(\d{3})-(\d{3})-(\d{4})/, "XXX-XXX-$3");
+	const getCensoredPhone = (masked: string, unmasked: string) => {
+		return isCensored ? masked : unmasked;
 	};
 
-	const getCensoredCreditCard = (card: string) => {
-		if (!isCensored || !card) return card;
-		const trimmed = card.trim();
-		if (/^\d{4}-\d{4}-\d{4}-\d{4}$/.test(trimmed)) {
-			return trimmed.replace(/^(\d{4})-(\d{4})-(\d{4})-(\d{4})$/, "XXXX-XXXX-XXXX-$4");
-		}
-		if (/^\d{16}$/.test(trimmed)) {
-			return trimmed.replace(/^(\d{12})(\d{4})$/, "XXXXXXXXXXXX$2");
-		}
-		return trimmed.replace(/(?:\d{4}-){3}(\d{4})/, "XXXX-XXXX-XXXX-$1");
+	const getCensoredCreditCard = (masked: string, unmasked: string) => {
+		return isCensored ? masked : unmasked;
 	};
 
-	const getCensoredDOB = (dob: string) => {
-		if (!isCensored || !dob) return dob;
-		const hasPrefix = /^DOB:/i.test(dob);
-		const clean = dob.replace(/^DOB:\s*/i, "");
-		const masked = clean.replace(/(\d{1,2})[/-](\d{1,2})[/-](\d{2})(\d+)/, (_, d, m, yPrefix, ySuffix) => {
-			return `XX/XX/${yPrefix}${"X".repeat(ySuffix.length)}`;
-		});
-		return hasPrefix ? `DOB:${masked}` : masked;
+	const getCensoredDOB = (masked: string, unmasked: string) => {
+		return isCensored ? masked : unmasked;
 	};
 
-	const getCensoredAddress = (addr: string) => {
-		if (!isCensored || !addr) return addr;
-		const hasPrefix = /^Address:\s*/i.test(addr);
-		const clean = addr.replace(/^Address:\s*/i, "");
-		// Only mask the first house number pattern (\d+(?:/\d+)?), replacing each digit with 'X'
-		const masked = clean.replace(/\d+(?:\/\d+)?/, (houseNumber) => {
-			return houseNumber.replace(/\d/g, "X");
-		});
-		return hasPrefix ? `Address: ${masked}` : masked;
+	const getCensoredAddress = (masked: string, unmasked: string) => {
+		return isCensored ? masked : unmasked;
 	};
 
 return (
@@ -278,31 +246,31 @@ return (
 
 			<div className="mt-4 space-y-4">
 				<div className="border-b border-gray-400 pb-1">
-				<input type="text" readOnly value={formData.username} aria-label="Username"
+				<input type="text" readOnly value={markedForm.username} aria-label="Username"
 					className="w-full bg-transparent text-sm sm:text-base text-gray-700 outline-none select-none cursor-default" />
 				</div>
 				<div className="border-b border-gray-400 pb-1">
-				<input type="text" readOnly value={getCensoredEmail(formData.email)} aria-label="Email"
+				<input type="text" readOnly value={getCensoredEmail(markedForm.email, unmarkedForm.email)} aria-label="Email"
 					className="w-full bg-transparent text-sm sm:text-base text-gray-700 outline-none select-none cursor-default font-mono sm:font-sans" />
 				</div>
 				<div className="border-b border-gray-400 pb-1">
-				<input type="text" readOnly value={isCensored ? "••••••••" : formData.password} aria-label="Password"
+				<input type="text" readOnly value={isCensored ? "••••••••" : markedForm.password} aria-label="Password"
 					className="w-full bg-transparent text-sm sm:text-base text-gray-700 outline-none select-none cursor-default" />
 				</div>
 				<div className="border-b border-gray-400 pb-1">
-				<input type="text" readOnly value={getCensoredDOB(formData.dateOfBirth)} aria-label="Date of Birth"
+				<input type="text" readOnly value={getCensoredDOB(markedForm.dateOfBirth, unmarkedForm.dateOfBirth)} aria-label="Date of Birth"
 					className="w-full bg-transparent text-sm sm:text-base text-gray-700 outline-none select-none cursor-default font-mono sm:font-sans" />
 				</div>
 				<div className="border-b border-gray-400 pb-1">
-				<input type="text" readOnly value={getCensoredPhone(formData.phone)} aria-label="Phone"
+				<input type="text" readOnly value={getCensoredPhone(markedForm.phone, unmarkedForm.phone)} aria-label="Phone"
 					className="w-full bg-transparent text-sm sm:text-base text-gray-700 outline-none select-none cursor-default font-mono sm:font-sans" />
 				</div>
 				<div className="border-b border-gray-400 pb-1">
-				<input type="text" readOnly value={getCensoredAddress(formData.address)} aria-label="Address"
+				<input type="text" readOnly value={getCensoredAddress(markedForm.address, unmarkedForm.address)} aria-label="Address"
 					className="w-full bg-transparent text-sm sm:text-base text-gray-700 outline-none select-none cursor-default font-mono sm:font-sans" />
 				</div>
 				<div className="border-b border-gray-400 pb-1">
-				<input type="text" readOnly value={getCensoredCreditCard(formData.creditCard)} aria-label="Credit Card"
+				<input type="text" readOnly value={getCensoredCreditCard(markedForm.creditCard, unmarkedForm.creditCard)} aria-label="Credit Card"
 					className="w-full bg-transparent text-sm sm:text-base text-gray-700 outline-none select-none cursor-default font-mono sm:font-sans" />
 				</div>
 			</div>
