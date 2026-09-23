@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import List, Optional
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 # --- Auth ---
@@ -53,7 +53,7 @@ class UserUpdate(BaseModel):
 # --- Transaction ---
 
 class DepositWithdrawRequest(BaseModel):
-    amount: float
+    amount: float = Field(gt=0)
 
 
 class TransactionResponse(BaseModel):
