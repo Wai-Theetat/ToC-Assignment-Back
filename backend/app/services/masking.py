@@ -19,7 +19,6 @@ def masked_text(input):
     ในส่วนของวิธีเซ็นเซอร์ สามารถดูได้ที่แต่ละฟังก์ชันการเซ็นเซอร์
     censor_tel(tel), censor_credit_card(credit_card), censor_email(email), censor_DOB(date_of_birth), censor_address(address)
 
-    เมื่อได้ string ที่ถูกเซ็นเซอร์แล้วก็จะนำไปแทนที่ string เดิม
     แล้วคืนค่ากลับไปยัง caller
     """
     #find values
@@ -31,15 +30,21 @@ def masked_text(input):
     masked_dob = censor_DOB(date_of_birth)
     masked_address = censor_address(address)
 
-    input_buffer = input
+    # input_buffer = input
 
-    if address: input_buffer = input_buffer.replace(f"Address: {address}", masked_address)
-    if tel: input_buffer = input_buffer.replace(tel, masked_tel)
-    if credit_card: input_buffer = input_buffer.replace(credit_card, masked_credit_card)
-    if email: input_buffer = input_buffer.replace(email, masked_email)
-    if date_of_birth: input_buffer = input_buffer.replace(f"DOB:{date_of_birth}", masked_dob)
+    # if address: input_buffer = input_buffer.replace(f"{address}", masked_address)
+    # if tel: input_buffer = input_buffer.replace(tel, masked_tel)
+    # if credit_card: input_buffer = input_buffer.replace(credit_card, masked_credit_card)
+    # if email: input_buffer = input_buffer.replace(email, masked_email)
+    # if date_of_birth: input_buffer = input_buffer.replace(f"{date_of_birth}", masked_dob)
 
-    return input_buffer
+    return {
+        "email" : masked_email,
+        "date_of_birth" : f"{masked_dob}",
+        "phone_number" : masked_tel,
+        "address" : masked_address,
+        "credit_card": masked_credit_card
+    }
 
 def find_credit_card(input):
     try:
@@ -61,7 +66,7 @@ def find_tel(input):
 
 def find_DOB(input):
     try:
-        return re.search(r'DOB:(\d{1,2}/\d{1,2}/\d{4,})', input).group(1)
+        return re.search(r'DOB:(\d{1,2}/\d{1,2}/\d{4,})', input).group()
     except:
         return ""
 
@@ -90,13 +95,13 @@ def find_details(input):
     tel = find_tel(input)
     date_of_birth = find_DOB(input)
 
-    if date_of_birth: temp = temp.replace(f"DOB:{date_of_birth}", "")
+    if date_of_birth: temp = temp.replace(f"{date_of_birth}", "")
     if credit_card: temp = temp.replace(credit_card, "")
     if email: temp = temp.replace(email, "")
     if tel: temp = temp.replace(tel, "")
     
     try:
-        address = re.search(r'Address: (.*)', temp).group(1).strip()
+        address = re.search(r'(.*)', temp).group(1).strip()
         return credit_card, email, tel, date_of_birth, address
     except:
         return credit_card, email, tel, date_of_birth, ""
@@ -197,7 +202,6 @@ def censor_DOB(DOB):
         return f"XX/XX/{third}{len(fourth) * 'X'}"
     
     newFormat = re.sub(r'(\d{1,2})/(\d{1,2})/(\d{2})(\d+)', mask_DOB, DOB)
-    #เพิ่ม string DOB: กลับเข้าไปเหมือนเดิม เนื่องจากตัดออกไปก่อนเข้าฟังก์ชัน
     return newFormat
 
 def censor_address(address):
@@ -221,7 +225,6 @@ def censor_address(address):
         return re.sub(r'\d', 'X', match.group())
     
     newformat = re.sub(r'\d+(?:/\d+)?', mask_digits, address, count=1)
-    #เพิ่ม string Address: กลับเข้าไปเหมือนเดิม เนื่องจากตัดออกไปก่อนเข้าฟังก์ชัน
     return newformat
 
 mask_text = masked_text
@@ -232,6 +235,7 @@ mask_address = censor_address
 mask_credit_card = censor_credit_card
 
 if __name__ == "__main__":
-    text_log : str = "Address: 689 ซอยลาดกระบัง 19 ถนนลาดกระบัง แขวงลาดกระบัง เขตลาดกระบัง กรุงเทพฯ 093-245-7894 1234-5678-9012-3456 somchai.d@company.com DOB:25/12/2549"
+    text_log : str = "Address: 68/9 ซอยลาดกระบัง 19 ถนนลาดกระบัง แขวงลาดกระบัง เขตลาดกระบัง กรุงเทพฯ 093-245-7894 1234-5678-9012-3456 somchai.d@company.com DOB:25/12/2549"
     result = main(text_log)
+    print(find_details(text_log))
     print(result)
