@@ -27,142 +27,170 @@ creditCard: "",
 
 export default function SignUpPage() {
 const router = useRouter();
-const [step, setStep] = useState<"input" | "confirmation">("input");
+const [step, setStep] = useState<"input" | "confirmation">(() => {
+	if (typeof window !== "undefined") {
+		const params = new URLSearchParams(window.location.search);
+		if (params.get("step") === "confirmation") return "confirmation";
+	}
+	return "input";
+});
 const [rawInfo, setRawInfo] = useState("");
 const [formData, setFormData] = useState<FormData>(DEFAULT_FORM_DATA);
 const [isCensored, setIsCensored] = useState(true);
 const [error, setError] = useState("");
 const [loading, setLoading] = useState(false);
 
-useEffect(() => {
-	if (typeof window !== "undefined") {
-	const params = new URLSearchParams(window.location.search);
-	if (params.get("step") === "confirmation") {
+	const handleProceedToConfirmation = () => {
+		setError("");
+		if (!rawInfo.trim()) {
+			setError("Please enter your info first");
+			return;
+		}
+
+		const lines = rawInfo.split("\n").map((l) => l.trim()).filter(Boolean);
+
+		const emailMatch = rawInfo.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/);
+		const phoneMatch = rawInfo.match(/(?:0\d{1,2}[-\s]?\d{3}[-\s]?\d{4}|\b\d{3}-\d{3}-\d{4}\b|\b0\d{8,9}\b)/);
+		const cardMatch = rawInfo.match(/(?:\d{4}-){3}\d{4}|\b\d{16}\b/);
+		const dobMatch = rawInfo.match(/(?:DOB:\s*)?(\d{1,2}[/-]\d{1,2}[/-]\d{2,7})/i);
+		const addressPrefixMatch = rawInfo.match(/Address:\s*([^\n\r]+)/i);
+
+		let username = "";
+		let password = "";
+
+		// If multiline structured input (line 0 = username, line 1 = password)
+		if (lines.length >= 2 && !lines[0].includes("@") && !/^Address:/i.test(lines[0]) && !/^DOB:/i.test(lines[0])) {
+			username = lines[0];
+			password = lines[1];
+		} else if (emailMatch) {
+			// If single-line bank log, derive username from email prefix and assign default password
+			username = emailMatch[0].split("@")[0].replace(/[^a-zA-Z0-9_]/g, "_");
+			password = "password123";
+		} else {
+			username = lines[0] || "user";
+			password = "password123";
+		}
+
+		let extractedAddress = "";
+		if (addressPrefixMatch) {
+			extractedAddress = `Address: ${addressPrefixMatch[1].trim()}`;
+		} else {
+			extractedAddress =
+				lines.find(
+					(l) =>
+						l !== lines[0] &&
+						l !== lines[1] &&
+						!l.includes(emailMatch?.[0] || "___") &&
+						!l.includes(phoneMatch?.[0] || "___") &&
+						!l.includes(cardMatch?.[0] || "___") &&
+						!(dobMatch && l.includes(dobMatch[0]))
+				) || "";
+		}
+
+		const parsed: FormData = {
+			username,
+			password,
+			email: emailMatch?.[0] || "",
+			phone: phoneMatch?.[0] || "",
+			dateOfBirth: dobMatch ? (dobMatch[0].toUpperCase().startsWith("DOB:") ? dobMatch[0] : `DOB:${dobMatch[1]}`) : "",
+			address: extractedAddress,
+			creditCard: cardMatch?.[0] || "",
+		};
+
+		if (!parsed.username || !parsed.email) {
+			setError("Couldn't find username or email in your info. Check the format.");
+			return;
+		}
+
+		setFormData(parsed);
 		setStep("confirmation");
-	}
-	}
-}, []);
-
-const handleProceedToConfirmation = () => {
-	setError("");
-	if (!rawInfo.trim()) {
-	setError("Please enter your info first");
-	return;
-	}
-
-	const lines = rawInfo.split("\n").map((l) => l.trim()).filter(Boolean);
-
-	const emailMatch = rawInfo.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/);
-	const phoneMatch = rawInfo.match(/(?:0\d{1,2}[-\s]?\d{3}[-\s]?\d{4}|\b\d{9,10}\b)/);
-	const cardMatch = rawInfo.match(/(?:\d{4}[-\s]?){3}\d{4}/);
-	const dobMatch = rawInfo.match(/\b\d{1,2}[/-]\d{1,2}[/-]\d{2,4}\b/);
-
-	const parsed: FormData = {
-	username: lines[0] || "",
-	password: lines[1] || "",
-	email: emailMatch?.[0] || "",
-	phone: phoneMatch?.[0] || "",
-	dateOfBirth: dobMatch?.[0].replace(/-/g, "/") || "",
-	address:
-		lines.find(
-		(l) =>
-			l !== lines[0] &&
-			l !== lines[1] &&
-			l !== emailMatch?.[0] &&
-			l !== phoneMatch?.[0] &&
-			l !== dobMatch?.[0] &&
-			l !== cardMatch?.[0]
-		) || "",
-	creditCard: cardMatch?.[0] || "",
 	};
-	
-	if (!parsed.username || !parsed.email || !parsed.password) {
-	setError("Couldn't find username, email, or password in your info. Check the format.");
-	return;
-	}
 
-	setFormData(parsed);
-	setStep("confirmation");
-};
+	const handleSignUp = async () => {
+		setError("");
+		setLoading(true);
+		try {
+			const res = await fetch("http://localhost:8080/auth/register", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({
+					username: formData.username,
+					password: formData.password,
+					email: formData.email,
+					tel: formData.phone,
+					date_of_birth: formData.dateOfBirth,
+					address: formData.address,
+					credit_card: formData.creditCard,
+				}),
+			});
+			const data = await res.json();
 
-const handleSignUp = async () => {
-	setError("");
-	setLoading(true);
-	try {
-	const res = await fetch("http://localhost:8080/auth/register", {
-		method: "POST",
-		headers: { "Content-Type": "application/json" },
-		body: JSON.stringify({
-		username: formData.username,
-		password: formData.password,
-		email: formData.email,
-		tel: formData.phone,
-		date_of_birth: formData.dateOfBirth,
-		address: formData.address,
-		credit_card: formData.creditCard,
-		}),
-	});
-	const data = await res.json();
+			if (!res.ok) {
+				setError(data.detail || "Sign up failed");
+				return;
+			}
 
-	if (!res.ok) {
-		setError(data.detail || "Sign up failed");
-		return;
-	}
+			router.push("/Login");
+		} catch {
+			setError("Could not reach server. Is the backend running?");
+		} finally {
+			setLoading(false);
+		}
+	};
 
-	router.push("/Login");
-	} catch {
-	setError("Could not reach server. Is the backend running?");
-	} finally {
-	setLoading(false);
-	}
-};
+	// Regex Masking functions following assignment specification & QA test cases
+	const getCensoredEmail = (email: string) => {
+		if (!isCensored || !email) return email;
+		// Mask username characters between first and last with '*'
+		return email.replace(/^([\w.-])(.*)([\w.-])(?=@)/, (_, first, middle, last) => {
+			return `${first}${"*".repeat(middle.length)}${last}`;
+		});
+	};
 
-const getCensoredEmail = (email: string) => {
-	if (!isCensored) return email;
-	const parts = email.split("@");
-	if (parts.length === 2) {
-	const name = parts[0];
-	const domain = parts[1];
-	const maskedName = name.length > 2 ? `${name.slice(0, 1)}••••` : `${name.slice(0, 1)}*`;
-	return `${maskedName}@${domain}`;
-	}
-	return "••••@gmail.com";
-};
+	const getCensoredPhone = (phone: string) => {
+		if (!isCensored || !phone) return phone;
+		const trimmed = phone.trim();
+		if (/^\d{3}-\d{3}-\d{4}$/.test(trimmed)) {
+			return trimmed.replace(/^(\d{3})-(\d{3})-(\d{4})$/, "XXX-XXX-$3");
+		}
+		if (/^\d{10}$/.test(trimmed)) {
+			return trimmed.replace(/^(\d{6})(\d{4})$/, "XXX-XXX-$2");
+		}
+		return trimmed.replace(/(\d{3})-(\d{3})-(\d{4})/, "XXX-XXX-$3");
+	};
 
-const getCensoredPhone = (phone: string) => {
-	if (!isCensored) return phone;
-	const clean = phone.trim();
-	if (clean.length >= 8) {
-	const prefix = clean.slice(0, 3);
-	const suffix = clean.slice(-4);
-	return `${prefix} ••• ${suffix}`;
-	}
-	return "022 ••• 2222";
-};
+	const getCensoredCreditCard = (card: string) => {
+		if (!isCensored || !card) return card;
+		const trimmed = card.trim();
+		if (/^\d{4}-\d{4}-\d{4}-\d{4}$/.test(trimmed)) {
+			return trimmed.replace(/^(\d{4})-(\d{4})-(\d{4})-(\d{4})$/, "XXXX-XXXX-XXXX-$4");
+		}
+		if (/^\d{16}$/.test(trimmed)) {
+			return trimmed.replace(/^(\d{12})(\d{4})$/, "XXXXXXXXXXXX$2");
+		}
+		return trimmed.replace(/(?:\d{4}-){3}(\d{4})/, "XXXX-XXXX-XXXX-$1");
+	};
 
-const getCensoredCreditCard = (card: string) => {
-	if (!isCensored) return card;
-	const digits = card.replace(/\D/g, "");
-	if (digits.length >= 12) {
-	const last4 = digits.slice(-4);
-	return `•••• •••• •••• ${last4}`;
-	}
-	return "•••• •••• •••• ••••";
-};
+	const getCensoredDOB = (dob: string) => {
+		if (!isCensored || !dob) return dob;
+		const hasPrefix = /^DOB:/i.test(dob);
+		const clean = dob.replace(/^DOB:\s*/i, "");
+		const masked = clean.replace(/(\d{1,2})[/-](\d{1,2})[/-](\d{2})(\d+)/, (_, d, m, yPrefix, ySuffix) => {
+			return `XX/XX/${yPrefix}${"X".repeat(ySuffix.length)}`;
+		});
+		return hasPrefix ? `DOB:${masked}` : masked;
+	};
 
-const getCensoredDOB = (dob: string) => {
-	if (!isCensored) return dob;
-	return "••/••/••••";
-};
-
-const getCensoredAddress = (addr: string) => {
-	if (!isCensored) return addr;
-	const parts = addr.split(" ");
-	if (parts.length > 1) {
-	return `${parts[0]} ••••••••••`;
-	}
-	return "••••••••••••";
-};
+	const getCensoredAddress = (addr: string) => {
+		if (!isCensored || !addr) return addr;
+		const hasPrefix = /^Address:\s*/i.test(addr);
+		const clean = addr.replace(/^Address:\s*/i, "");
+		// Only mask the first house number pattern (\d+(?:/\d+)?), replacing each digit with 'X'
+		const masked = clean.replace(/\d+(?:\/\d+)?/, (houseNumber) => {
+			return houseNumber.replace(/\d/g, "X");
+		});
+		return hasPrefix ? `Address: ${masked}` : masked;
+	};
 
 return (
 	<div className="flex min-h-screen flex-col lg:flex-row bg-[#F0FDFD]">
@@ -187,7 +215,7 @@ return (
 					id="user-info-input"
 					value={rawInfo}
 					onChange={(e) => setRawInfo(e.target.value)}
-					placeholder={"Your info here...\ne.g.\nsomchai\nsomchai.d@company.com\n1234\n25/12/2549\n093-245-7894\n689 ซอยลาดกระบัง 19 ถนนลาดกระบัง\n1234-5678-9012-3456"}
+					placeholder={"Enter your info or paste a bank log...\ne.g.\nsomchai\n1234\nsomchai.d@company.com\n093-245-7894\nDOB:25/12/2549\nAddress: 689 ซอยลาดกระบัง 19 ถนนลาดกระบัง แขวงลาดกระบัง เขตลาดกระบัง กรุงเทพฯ\n1234-5678-9012-3456"}
 					className="h-full w-full resize-none bg-transparent text-base text-gray-800 placeholder:text-gray-400 focus:outline-none"
 				/>
 				</div>

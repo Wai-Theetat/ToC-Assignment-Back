@@ -47,11 +47,11 @@ useEffect(() => {
 	}, [router]);
 
 	return (
-		<div className="flex min-h-screen bg-white">
+		<div className="flex min-h-screen flex-col md:flex-row bg-white">
 		<Sidebar />
 
-		<main className="flex-1 px-16 py-12">
-			<h1 className="text-3xl text-gray-900">Transaction Log</h1>
+		<main className="flex-1 min-w-0 px-4 py-6 sm:px-8 sm:py-8 lg:px-16 lg:py-12">
+			<h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Transaction Log</h1>
 
 			{error && <p className="mt-4 text-sm text-red-500">{error}</p>}
 			{loading && <p className="mt-4 text-sm text-gray-500">Loading...</p>}
