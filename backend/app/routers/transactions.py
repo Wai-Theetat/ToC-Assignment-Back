@@ -8,6 +8,7 @@ from app.models.models import Transaction, User
 from app.schemas.schemas import (
 	BalanceResponse,
 	DepositWithdrawRequest,
+	TransferRequest,
 	TransactionResponse,
 )
 from app.services.masking import mask_credit_card
@@ -102,6 +103,56 @@ def withdraw(user_id: int, req: DepositWithdrawRequest, db: Session = Depends(ge
 	db.commit()
 	# TODO: implement withdraw
 	return {"message": "withdrawn", "amount": req.amount}
+
+
+@router.post("/{user_id}/transfer", description="โอนเงิน")
+def transfer(user_id: int, req: TransferRequest, db: Session = Depends(get_db)):
+	if req.amount <= 0:
+		raise HTTPException(status_code=400, detail="Amount must be positive")
+	
+	sender = db.query(User).filter(User.id == user_id).first()
+	if sender is None:
+		raise HTTPException(status_code=404, detail="User not found")
+	
+	if sender.username == req.target_username:
+		raise HTTPException(status_code=400, detail="Cannot transfer to yourself")
+		
+	receiver = db.query(User).filter(User.username == req.target_username).first()
+	if receiver is None:
+		raise HTTPException(status_code=404, detail="Target user not found")
+		
+	if sender.money < req.amount:
+		raise HTTPException(status_code=400, detail="Insufficient funds")
+
+	sender_updated = sender.money - req.amount
+	receiver_updated = receiver.money + req.amount
+
+	tx_out = Transaction(
+		user_id=sender.id,
+		credit_card=mask_credit_card(sender.credit_card),
+		old_money=sender.money,
+		updated_money=sender_updated,
+		transaction_amount=req.amount,
+		status="transfer_out",
+	)
+	
+	tx_in = Transaction(
+		user_id=receiver.id,
+		credit_card=mask_credit_card(receiver.credit_card),
+		old_money=receiver.money,
+		updated_money=receiver_updated,
+		transaction_amount=req.amount,
+		status="transfer_in",
+	)
+
+	sender.money = sender_updated
+	receiver.money = receiver_updated
+	
+	db.add(tx_out)
+	db.add(tx_in)
+	db.commit()
+	
+	return {"message": "transferred", "amount": req.amount, "target": receiver.username}
 
 
 @router.get("/{user_id}/history", response_model=List[TransactionResponse], description="""ดูประวัติธุรกรรม

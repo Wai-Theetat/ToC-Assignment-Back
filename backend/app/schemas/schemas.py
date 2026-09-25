@@ -54,6 +54,11 @@ class DepositWithdrawRequest(BaseModel):
     amount: float
 
 
+class TransferRequest(BaseModel):
+    amount: float
+    target_username: str
+
+
 class TransactionResponse(BaseModel):
     credit_card: str
     old_money: float
