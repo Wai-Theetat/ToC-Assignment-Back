@@ -1,258 +1,237 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useRef, useState, type Dispatch, type SetStateAction } from "react";
 import { useRouter } from "next/navigation";
 import Sidebar from "@/components/Sidebar";
+import { API_URL, getErrorMessage } from "@/lib/api";
 
-const AMOUNTS = [1, 2, 5, 10, 50, 100, 500, 1000];
-const API = "http://localhost:8080";
-
-const getErrorMessage = (data: any, fallback: string): string => {
-  if (typeof data?.detail === "string") return data.detail;
-  if (Array.isArray(data?.detail)) return data.detail.map((e: any) => e.msg).join(", ");
-  return fallback;
-};
+const QUICK_AMOUNTS = [100, 500, 1_000, 5_000];
+type BalanceResponse = { username?: string; money?: number };
 
 export default function MainMenu() {
   const router = useRouter();
-  const [userId, setUserId] = useState<string | null>(null);
+  const userIdRef = useRef<string | null>(null);
   const [username, setUsername] = useState("");
   const [balance, setBalance] = useState(0);
   const [depositAmount, setDepositAmount] = useState("");
   const [withdrawAmount, setWithdrawAmount] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState<"deposit" | "withdraw" | null>(null);
 
-  const fetchBalance = async (id: string) => {
+  const loadBalance = async (id: string) => {
     try {
-      const res = await fetch(`${API}/transactions/${id}/balance`);
-      if (res.ok) {
-        const data = await res.json();
-        if (data.username) setUsername(data.username);
-        if (typeof data.money === "number") setBalance(data.money);
+      const response = await fetch(`${API_URL}/transactions/${id}/balance`);
+      const data: unknown = await response.json();
+      if (!response.ok || !data || typeof data !== "object") {
+        setError(getErrorMessage(data, "We could not load your account balance."));
+        return;
       }
+      const account = data as BalanceResponse;
+      if (typeof account.username === "string") setUsername(account.username);
+      if (typeof account.money === "number") setBalance(account.money);
     } catch {
-      // Fallback to locally stored username if network fails
-      const savedUser = localStorage.getItem("username");
-      if (savedUser) setUsername(savedUser);
+      setError("We could not reach the account service. Try again shortly.");
     }
   };
 
   useEffect(() => {
     const id = localStorage.getItem("user_id");
-    const savedUser = localStorage.getItem("username");
-    if (savedUser) {
-      setUsername(savedUser);
-    }
-
     if (!id) {
       router.push("/Login");
       return;
     }
-    setUserId(id);
-    fetchBalance(id).finally(() => setLoading(false));
+    userIdRef.current = id;
+    void (async () => {
+      await loadBalance(id);
+      setLoading(false);
+    })();
   }, [router]);
 
-  const bump = (
-    setter: React.Dispatch<React.SetStateAction<string>>,
-    amount: number
-  ) => setter((prev) => String((Number(prev) || 0) + amount));
+  const addAmount = (setter: Dispatch<SetStateAction<string>>, quickAmount: number) => {
+    setter((current) => (Number(current || 0) + quickAmount).toString());
+  };
 
-  const handleDeposit = async () => {
+  const submitTransaction = async (type: "deposit" | "withdraw") => {
+    const id = userIdRef.current;
+    const input = type === "deposit" ? depositAmount : withdrawAmount;
+    const amount = Number(input);
     setError("");
-    const value = Number(depositAmount);
-    if (!value || value <= 0 || !userId) return;
 
+    if (!id || !Number.isFinite(amount) || amount <= 0) {
+      setError("Enter an amount greater than 0 before continuing.");
+      return;
+    }
+    setSubmitting(type);
     try {
-      const res = await fetch(`${API}/transactions/${userId}/deposit`, {
+      const response = await fetch(`${API_URL}/transactions/${id}/${type}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ amount: value }),
+        body: JSON.stringify({ amount }),
       });
-      const data = await res.json();
-      if (!res.ok) {
-        setError(getErrorMessage(data, "Deposit failed"));
+      const data: unknown = await response.json();
+      if (!response.ok) {
+        setError(getErrorMessage(data, `${type === "deposit" ? "Deposit" : "Withdrawal"} failed. Try again.`));
         return;
       }
-      setDepositAmount("");
-      await fetchBalance(userId);
+      if (type === "deposit") setDepositAmount("");
+      else setWithdrawAmount("");
+      await loadBalance(id);
     } catch {
-      setError("Could not reach server");
+      setError("The transaction service is unavailable. Try again shortly.");
+    } finally {
+      setSubmitting(null);
     }
   };
 
-  const handleWithdraw = async () => {
-    setError("");
-    const value = Number(withdrawAmount);
-    if (!value || value <= 0 || !userId) return;
-
-    try {
-      const res = await fetch(`${API}/transactions/${userId}/withdraw`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ amount: value }),
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        setError(getErrorMessage(data, "Withdraw failed"));
-        return;
-      }
-      setWithdrawAmount("");
-      await fetchBalance(userId);
-    } catch {
-      setError("Could not reach server");
-    }
-  };
-
-  if (loading) {
-    return (
-      <div className="flex min-h-screen flex-col md:flex-row bg-white">
-        <Sidebar />
-        <main className="flex flex-1 items-center justify-center p-8">
-          <div className="flex flex-col items-center gap-3">
-            <div className="h-8 w-8 animate-spin rounded-full border-4 border-green-600 border-t-transparent" />
-            <p className="text-sm font-medium text-gray-500">Loading account...</p>
-          </div>
-        </main>
-      </div>
-    );
-  }
+  if (loading) return <LoadingScreen />;
 
   return (
-    <div className="flex min-h-screen flex-col md:flex-row bg-white">
+    <div className="flex min-h-screen">
       <Sidebar />
-
-      <main className="flex-1 min-w-0 px-4 py-6 sm:px-8 sm:py-8 lg:px-12 xl:px-16 lg:py-12">
-        {/* User Header */}
-        <div className="flex flex-col sm:flex-row sm:items-baseline sm:justify-between pb-4 sm:pb-6 border-b border-gray-100 gap-1">
-          <div>
-            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 tracking-tight">
-              {username || "User"}
-            </h1>
-            <p className="text-xs sm:text-sm text-gray-500 mt-0.5">My Account</p>
-          </div>
-        </div>
-
-        {error && (
-          <div className="mt-4 rounded-lg bg-red-50 p-3 sm:p-4 border border-red-200">
-            <p className="text-sm text-red-600 font-medium">{error}</p>
-          </div>
-        )}
-
-        {/* Content Layout: Form Controls + Balance Display */}
-        <div className="mt-6 sm:mt-8 flex flex-col xl:flex-row xl:items-start xl:justify-between gap-8 lg:gap-12">
-          {/* Action Column: Deposit & Withdraw */}
-          <div className="w-full max-w-xl">
-            {/* Deposit Section */}
+      <main className="min-w-0 flex-1 bg-white px-5 py-8 sm:px-10 lg:px-16 lg:py-12">
+        <div className="mx-auto max-w-5xl">
+          <header className="flex flex-col justify-between gap-6 border-b border-[#e0ebe5] pb-8 md:flex-row md:items-end">
             <div>
-              <div className="flex items-center justify-between mb-3">
-                <span className="text-sm sm:text-base font-semibold text-gray-800 flex items-center gap-2">
-                  <span className="inline-block w-2.5 h-2.5 rounded-full bg-green-500"></span>
-                  Deposit
-                </span>
-              </div>
+              <p className="eyebrow">Account overview</p>
+              <h1 className="mt-3 text-3xl font-bold tracking-tight text-[#0d1f1c] sm:text-4xl">
+                Welcome back, {username || "there"}.
+              </h1>
+              <p className="mt-3 text-[0.9375rem] text-[#52716a]">
+                Manage your funds. All entries are recorded in your masked activity log.
+              </p>
+            </div>
+            <div className="badge badge-green self-start md:self-auto">
+              <span className="h-1.5 w-1.5 rounded-full bg-[#147a60] animate-pulse" aria-hidden /> Session active
+            </div>
+          </header>
 
-              <div className="grid grid-cols-4 gap-2 sm:gap-3 md:gap-4">
-                {AMOUNTS.map((amount) => (
-                  <button
-                    key={`deposit-${amount}`}
-                    type="button"
-                    onClick={() => bump(setDepositAmount, amount)}
-                    className="rounded-lg bg-green-200 py-3 sm:py-3.5 md:py-4 text-center text-xs sm:text-sm md:text-base font-semibold text-gray-900 hover:bg-green-300 active:scale-95 transition-all cursor-pointer"
-                  >
-                    +{amount.toLocaleString()}
-                  </button>
-                ))}
-              </div>
+          {error && (
+            <div role="alert" className="mt-6 flex items-start gap-3 rounded-xl border border-[#fecaca] bg-[#fef2f2] px-4 py-3">
+              <p className="text-sm font-medium text-[#c0392b]">{error}</p>
+            </div>
+          )}
 
-              <div className="mt-3 sm:mt-4 flex items-center rounded-lg bg-green-50 pr-2 border border-green-200/60 focus-within:border-green-500 transition-colors">
-                <input
-                  type="text"
-                  inputMode="numeric"
-                  value={depositAmount}
-                  onChange={(e) => setDepositAmount(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && handleDeposit()}
-                  placeholder="Enter Amount Deposit"
-                  className="w-full bg-transparent px-3.5 py-3 sm:px-5 sm:py-4 text-sm sm:text-base font-semibold text-gray-900 placeholder:font-semibold placeholder:text-gray-400 focus:outline-none"
-                />
-                {depositAmount && (
-                  <button
-                    type="button"
-                    onClick={handleDeposit}
-                    className="shrink-0 rounded-md bg-green-200 px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm font-semibold text-gray-900 hover:bg-green-300 active:scale-95 transition-all cursor-pointer"
-                  >
-                    Enter
-                  </button>
-                )}
-              </div>
+          <section className="mt-10 grid gap-8 xl:grid-cols-[minmax(0,1fr)_22rem] xl:items-start">
+            <div className="grid gap-8">
+              <TransactionPanel
+                title="Deposit funds"
+                description="Add liquidity to this account instantly."
+                amount={depositAmount}
+                onAmountChange={setDepositAmount}
+                onQuickAmount={(a) => addAmount(setDepositAmount, a)}
+                onSubmit={() => submitTransaction("deposit")}
+                submitting={submitting === "deposit"}
+                tone="deposit"
+              />
+              <TransactionPanel
+                title="Withdraw funds"
+                description="Move available funds securely."
+                amount={withdrawAmount}
+                onAmountChange={setWithdrawAmount}
+                onQuickAmount={(a) => addAmount(setWithdrawAmount, a)}
+                onSubmit={() => submitTransaction("withdraw")}
+                submitting={submitting === "withdraw"}
+                tone="withdraw"
+              />
             </div>
 
-            {/* Divider */}
-            <hr className="my-6 sm:my-8 border-gray-200" />
-
-            {/* Withdraw Section */}
-            <div>
-              <div className="flex items-center justify-between mb-3">
-                <span className="text-sm sm:text-base font-semibold text-gray-800 flex items-center gap-2">
-                  <span className="inline-block w-2.5 h-2.5 rounded-full bg-emerald-600"></span>
-                  Withdraw
-                </span>
+            <aside className="card sticky top-8 overflow-hidden bg-[#0d1f1c] text-white">
+              {/* aesthetic grid inset */}
+              <div className="absolute inset-0 opacity-[0.03] bg-[linear-gradient(rgba(255,255,255,1)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,1)_1px,transparent_1px)] bg-[size:24px_24px]" />
+              <div className="relative p-7 sm:p-9">
+                <p className="text-sm font-medium text-[#7a9790]">Available balance</p>
+                <div className="mt-4 flex items-baseline gap-2">
+                  <span className="text-xl font-medium text-[#52716a]">฿</span>
+                  <p className="text-4xl font-bold tracking-tight sm:text-5xl tabular-nums break-all">
+                    {balance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </p>
+                </div>
+                <div className="mt-10 border-t border-white/10 pt-6">
+                  <div className="flex items-center gap-3 text-sm text-[#c8ecd9]">
+                    <svg className="h-5 w-5 opacity-80" viewBox="0 0 24 24" fill="none"><path d="M12 3.5v17M4 10h16M4 14h16M19 6.4v4.7c0 4.4-2.9 8.2-7 9.4-4.1-1.2-7-5-7-9.4V6.4l7-2.9 7 2.9Z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" /></svg>
+                    <span>Masking policy active</span>
+                  </div>
+                </div>
               </div>
-
-              <div className="grid grid-cols-4 gap-2 sm:gap-3 md:gap-4">
-                {AMOUNTS.map((amount) => (
-                  <button
-                    key={`withdraw-${amount}`}
-                    type="button"
-                    onClick={() => bump(setWithdrawAmount, amount)}
-                    className="rounded-lg bg-green-200 py-3 sm:py-3.5 md:py-4 text-center text-xs sm:text-sm md:text-base font-semibold text-gray-900 hover:bg-green-300 active:scale-95 transition-all cursor-pointer"
-                  >
-                    -{amount.toLocaleString()}
-                  </button>
-                ))}
-              </div>
-
-              <div className="mt-3 sm:mt-4 flex items-center rounded-lg bg-green-50 pr-2 border border-green-200/60 focus-within:border-green-500 transition-colors">
-                <input
-                  type="text"
-                  inputMode="numeric"
-                  value={withdrawAmount}
-                  onChange={(e) => setWithdrawAmount(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && handleWithdraw()}
-                  placeholder="Enter Amount Withdraw"
-                  className="w-full bg-transparent px-3.5 py-3 sm:px-5 sm:py-4 text-sm sm:text-base font-semibold text-gray-900 placeholder:font-semibold placeholder:text-gray-400 focus:outline-none"
-                />
-                {withdrawAmount && (
-                  <button
-                    type="button"
-                    onClick={handleWithdraw}
-                    className="shrink-0 rounded-md bg-green-200 px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm font-semibold text-gray-900 hover:bg-green-300 active:scale-95 transition-all cursor-pointer"
-                  >
-                    Enter
-                  </button>
-                )}
-              </div>
-            </div>
-          </div>
-
-          {/* Balance Display Widget (shows on top on mobile/tablet, and on the right side on desktop) */}
-          <div className="order-first xl:order-last flex justify-center xl:flex-1 xl:justify-center py-2 xl:py-16">
-            <div className="flex h-52 w-52 sm:h-64 sm:w-64 lg:h-72 lg:w-72 xl:h-80 xl:w-80 shrink-0 items-center justify-center rounded-full border-2 border-green-600 bg-green-200 p-4 sm:p-6 text-center shadow-xs transition-all">
-              <div className="flex flex-col items-center">
-                <span className="text-xs sm:text-sm font-semibold uppercase tracking-wider text-green-800">
-                  Current Balance
-                </span>
-                <span className="mt-1 sm:mt-2 text-2xl sm:text-3xl xl:text-4xl font-bold text-gray-900 tabular-nums">
-                  {balance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                </span>
-                <span className="text-xs sm:text-sm font-medium text-gray-700 mt-0.5">
-                  Baht
-                </span>
-              </div>
-            </div>
-          </div>
+            </aside>
+          </section>
         </div>
       </main>
     </div>
   );
+}
+
+type TransactionPanelProps = {
+  title: string;
+  description: string;
+  amount: string;
+  onAmountChange: (value: string) => void;
+  onQuickAmount: (amount: number) => void;
+  onSubmit: () => void;
+  submitting: boolean;
+  tone: "deposit" | "withdraw";
+};
+
+function TransactionPanel({ title, description, amount, onAmountChange, onQuickAmount, onSubmit, submitting, tone }: TransactionPanelProps) {
+  const isDeposit = tone === "deposit";
+  return (
+    <section className="card p-6 sm:p-8">
+      <div className="flex items-start">
+        <div>
+          <h2 className="text-[1.125rem] font-bold text-[#0d1f1c] flex items-center gap-2">
+            {isDeposit ?
+              <svg className="h-5 w-5 text-[#147a60]" viewBox="0 0 24 24" fill="none"><path d="M12 17V7m0 0L8 11m4-4 4 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg> :
+              <svg className="h-5 w-5 text-[#b45309]" viewBox="0 0 24 24" fill="none"><path d="M12 7v10m0 0 4-4m-4 4-4-4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+            }
+            {title}
+          </h2>
+          <p className="mt-1 text-sm text-[#7a9790]">{description}</p>
+        </div>
+      </div>
+
+      <div className="mt-7 flex flex-wrap gap-2">
+        {QUICK_AMOUNTS.map((amt) => (
+          <button
+            key={amt}
+            type="button"
+            onClick={() => onQuickAmount(amt)}
+            className="flex h-[2.25rem] items-center rounded-lg border border-[#e0ebe5] bg-[#f5f9f7] px-3.5 text-[0.8125rem] font-medium text-[#1e3532] hover:bg-[#e2f5ec] hover:border-[#c8ecd9] hover:text-[#083a31] transition-colors"
+          >
+            +{amt.toLocaleString()}
+          </button>
+        ))}
+      </div>
+
+      <form className="mt-4 flex gap-3" onSubmit={(e) => { e.preventDefault(); onSubmit(); }}>
+        <div className="field-shell flex h-12 flex-1 items-center px-4">
+          <span className="mr-2 text-sm font-medium text-[#7a9790]">THB</span>
+          <input
+            type="text"
+            inputMode="decimal"
+            value={amount}
+            onChange={(e) => {
+              // Basic number filter
+              const val = e.target.value.replace(/[^0-9.]/g, "");
+              if (val.split(".").length <= 2) onAmountChange(val);
+            }}
+            placeholder="0.00"
+            className="h-full min-w-0 flex-1 bg-transparent text-[0.9375rem] font-semibold text-[#0d1f1c] outline-none placeholder:font-normal placeholder:text-[#a0b5af]"
+          />
+        </div>
+        <button
+          type="button"
+          onClick={onSubmit}
+          disabled={submitting}
+          className={`flex h-12 items-center justify-center rounded-xl px-5 text-sm font-semibold text-white shadow-sm transition-all focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:opacity-50 ${isDeposit ? "bg-[#083a31] hover:bg-[#0d5546] focus-visible:outline-[#147a60]" : "bg-[#b45309] hover:bg-[#92400e] focus-visible:outline-[#d97706]"}`}
+        >
+          {submitting ? "Processing…" : isDeposit ? "Deposit" : "Withdraw"}
+        </button>
+      </form>
+    </section>
+  );
+}
+
+function LoadingScreen() {
+  return <div className="flex min-h-screen items-center justify-center bg-white"><div className="text-center"><svg className="mx-auto h-8 w-8 animate-spin text-[#147a60]" viewBox="0 0 24 24" fill="none"><circle className="opacity-20" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" /><path className="opacity-100" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg><p className="mt-4 text-[0.875rem] font-medium text-[#7a9790]">Loading workspace…</p></div></div>;
 }
