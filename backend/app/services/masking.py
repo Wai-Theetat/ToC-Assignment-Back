@@ -66,10 +66,11 @@ def find_tel(input):
 
 def find_DOB(input):
     try:
-        return re.search(r'DOB:(\d{1,2}/\d{1,2}/\d{4,})', input).group()
+        m = re.compile(r'(?:DOB\s*:\s*)?(\d{1,2}/\d{1,2}/\d{4,})', re.IGNORECASE).search(input)
+        return m.group(0) if m else ""
     except:
         return ""
-
+    
 def find_details(input):
     """
     เนื่องจากข้อมูลที่ได้รับไม่ได้เรียงแบบมีแบบแผน จึงต้องใช้ regex ในการดักส่วนต่างๆ เช่น
@@ -235,7 +236,7 @@ mask_address = censor_address
 mask_credit_card = censor_credit_card
 
 if __name__ == "__main__":
-    text_log : str = "Address: 68/9 ซอยลาดกระบัง 19 ถนนลาดกระบัง แขวงลาดกระบัง เขตลาดกระบัง กรุงเทพฯ 093-245-7894 1234-5678-9012-3456 somchai.d@company.com DOB:25/12/2549"
+    text_log : str = "asb@gmail.com 090-123-1234 400/142 1234-1234-1234-1234 DOB: 16/12/2005"
     result = main(text_log)
     print(find_details(text_log))
     print(result)
