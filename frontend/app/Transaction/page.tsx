@@ -11,7 +11,7 @@ type ApiTransaction = {
   old_money: number;
   updated_money: number;
   transaction_amount: number;
-  status: string;
+  status: "deposit" | "withdraw" | "transfer_in" | "transfer_out";
   created_at: string;
 };
 
@@ -43,8 +43,8 @@ export default function TransactionPage() {
     })();
   }, [router]);
 
-  const depositCount = transactions.filter((t) => t.status === "deposit").length;
-  const withdrawCount = transactions.filter((t) => t.status === "withdraw").length;
+  const depositCount = transactions.filter((t) => t.status === "deposit" || t.status === "transfer_in").length;
+  const withdrawCount = transactions.filter((t) => t.status === "withdraw" || t.status === "transfer_out").length;
 
   return (
     <div className="flex min-h-screen">
@@ -87,7 +87,7 @@ export default function TransactionPage() {
                     key={`${t.created_at}-${i}`}
                     transaction={{
                       id: String(i),
-                      type: t.status === "withdraw" ? "withdraw" : "deposit",
+                      type: t.status,
                       amount: Math.abs(t.transaction_amount),
                       cardNumber: t.credit_card,
                       date: date.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" }),
@@ -108,7 +108,7 @@ function isApiTransaction(value: unknown): value is ApiTransaction {
   if (!value || typeof value !== "object") return false;
   const item = value as Partial<ApiTransaction>;
   return (
-    (item.status === "deposit" || item.status === "withdraw") &&
+    (item.status === "deposit" || item.status === "withdraw" || item.status === "transfer_in" || item.status === "transfer_out") &&
     typeof item.credit_card === "string" &&
     typeof item.transaction_amount === "number" &&
     typeof item.created_at === "string"

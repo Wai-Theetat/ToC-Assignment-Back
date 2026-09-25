@@ -15,9 +15,11 @@ export default function MainMenu() {
   const [balance, setBalance] = useState(0);
   const [depositAmount, setDepositAmount] = useState("");
   const [withdrawAmount, setWithdrawAmount] = useState("");
+  const [transferAmount, setTransferAmount] = useState("");
+  const [transferTarget, setTransferTarget] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
-  const [submitting, setSubmitting] = useState<"deposit" | "withdraw" | null>(null);
+  const [submitting, setSubmitting] = useState<"deposit" | "withdraw" | "transfer" | null>(null);
 
   const loadBalance = async (id: string) => {
     try {
@@ -52,30 +54,43 @@ export default function MainMenu() {
     setter((current) => (Number(current || 0) + quickAmount).toString());
   };
 
-  const submitTransaction = async (type: "deposit" | "withdraw") => {
+  const submitTransaction = async (type: "deposit" | "withdraw" | "transfer") => {
     const id = userIdRef.current;
-    const input = type === "deposit" ? depositAmount : withdrawAmount;
-    const amount = Number(input);
+    let inputAmount = "";
+    if (type === "deposit") inputAmount = depositAmount;
+    else if (type === "withdraw") inputAmount = withdrawAmount;
+    else inputAmount = transferAmount;
+
+    const amount = Number(inputAmount);
     setError("");
 
     if (!id || !Number.isFinite(amount) || amount <= 0) {
       setError("Enter an amount greater than 0 before continuing.");
       return;
     }
+    if (type === "transfer" && (!transferTarget || transferTarget.trim() === "")) {
+      setError("Please enter the recipient's username.");
+      return;
+    }
+
     setSubmitting(type);
     try {
+      const payload: Record<string, string | number> = { amount };
+      if (type === "transfer") payload.target_username = transferTarget.trim();
+
       const response = await fetch(`${API_URL}/transactions/${id}/${type}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ amount }),
+        body: JSON.stringify(payload),
       });
       const data: unknown = await response.json();
       if (!response.ok) {
-        setError(getErrorMessage(data, `${type === "deposit" ? "Deposit" : "Withdrawal"} failed. Try again.`));
+        setError(getErrorMessage(data, `${type === "transfer" ? "Transfer" : type === "deposit" ? "Deposit" : "Withdrawal"} failed. Try again.`));
         return;
       }
       if (type === "deposit") setDepositAmount("");
-      else setWithdrawAmount("");
+      else if (type === "withdraw") setWithdrawAmount("");
+      else { setTransferAmount(""); setTransferTarget(""); }
       await loadBalance(id);
     } catch {
       setError("The transaction service is unavailable. Try again shortly.");
@@ -134,6 +149,18 @@ export default function MainMenu() {
                 submitting={submitting === "withdraw"}
                 tone="withdraw"
               />
+              <TransactionPanel
+                title="Transfer funds"
+                description="Send money to another user by their username."
+                amount={transferAmount}
+                onAmountChange={setTransferAmount}
+                onQuickAmount={(a) => addAmount(setTransferAmount, a)}
+                onSubmit={() => submitTransaction("transfer")}
+                submitting={submitting === "transfer"}
+                tone="transfer"
+                target={transferTarget}
+                onTargetChange={setTransferTarget}
+              />
             </div>
 
             <aside className="card sticky top-8 overflow-hidden bg-[#0d1f1c] text-white">
@@ -170,20 +197,22 @@ type TransactionPanelProps = {
   onQuickAmount: (amount: number) => void;
   onSubmit: () => void;
   submitting: boolean;
-  tone: "deposit" | "withdraw";
+  tone: "deposit" | "withdraw" | "transfer";
+  target?: string;
+  onTargetChange?: (value: string) => void;
 };
 
-function TransactionPanel({ title, description, amount, onAmountChange, onQuickAmount, onSubmit, submitting, tone }: TransactionPanelProps) {
+function TransactionPanel({ title, description, amount, onAmountChange, onQuickAmount, onSubmit, submitting, tone, target, onTargetChange }: TransactionPanelProps) {
   const isDeposit = tone === "deposit";
+  const isTransfer = tone === "transfer";
   return (
     <section className="card p-6 sm:p-8">
       <div className="flex items-start">
         <div>
           <h2 className="text-[1.125rem] font-bold text-[#0d1f1c] flex items-center gap-2">
-            {isDeposit ?
-              <svg className="h-5 w-5 text-[#147a60]" viewBox="0 0 24 24" fill="none"><path d="M12 17V7m0 0L8 11m4-4 4 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg> :
-              <svg className="h-5 w-5 text-[#b45309]" viewBox="0 0 24 24" fill="none"><path d="M12 7v10m0 0 4-4m-4 4-4-4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
-            }
+            {isDeposit && <svg className="h-5 w-5 text-[#147a60]" viewBox="0 0 24 24" fill="none"><path d="M12 17V7m0 0L8 11m4-4 4 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>}
+            {tone === "withdraw" && <svg className="h-5 w-5 text-[#b45309]" viewBox="0 0 24 24" fill="none"><path d="M12 7v10m0 0 4-4m-4 4-4-4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>}
+            {isTransfer && <svg className="h-5 w-5 text-[#2563eb]" viewBox="0 0 24 24" fill="none"><path d="M5 12h14M13 5l7 7-7 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>}
             {title}
           </h2>
           <p className="mt-1 text-sm text-[#7a9790]">{description}</p>
@@ -203,7 +232,19 @@ function TransactionPanel({ title, description, amount, onAmountChange, onQuickA
         ))}
       </div>
 
-      <form className="mt-4 flex gap-3" onSubmit={(e) => { e.preventDefault(); onSubmit(); }}>
+      <form className="mt-4 flex flex-col gap-3 sm:flex-row" onSubmit={(e) => { e.preventDefault(); onSubmit(); }}>
+        {isTransfer && (
+          <div className="field-shell flex h-12 flex-1 items-center px-4">
+            <span className="mr-2 text-sm font-medium text-[#7a9790]">@</span>
+            <input
+              type="text"
+              value={target ?? ""}
+              onChange={(e) => onTargetChange?.(e.target.value)}
+              placeholder="Username"
+              className="h-full min-w-0 flex-1 bg-transparent text-[0.9375rem] font-semibold text-[#0d1f1c] outline-none placeholder:font-normal placeholder:text-[#a0b5af]"
+            />
+          </div>
+        )}
         <div className="field-shell flex h-12 flex-1 items-center px-4">
           <span className="mr-2 text-sm font-medium text-[#7a9790]">THB</span>
           <input
@@ -211,7 +252,6 @@ function TransactionPanel({ title, description, amount, onAmountChange, onQuickA
             inputMode="decimal"
             value={amount}
             onChange={(e) => {
-              // Basic number filter
               const val = e.target.value.replace(/[^0-9.]/g, "");
               if (val.split(".").length <= 2) onAmountChange(val);
             }}
@@ -223,9 +263,9 @@ function TransactionPanel({ title, description, amount, onAmountChange, onQuickA
           type="button"
           onClick={onSubmit}
           disabled={submitting}
-          className={`flex h-12 items-center justify-center rounded-xl px-5 text-sm font-semibold text-white shadow-sm transition-all focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:opacity-50 ${isDeposit ? "bg-[#083a31] hover:bg-[#0d5546] focus-visible:outline-[#147a60]" : "bg-[#b45309] hover:bg-[#92400e] focus-visible:outline-[#d97706]"}`}
+          className={`flex h-12 items-center justify-center rounded-xl px-5 text-sm font-semibold text-white shadow-sm transition-all focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:opacity-50 ${isTransfer ? "bg-[#2563eb] hover:bg-[#1d4ed8] focus-visible:outline-[#3b82f6]" : isDeposit ? "bg-[#083a31] hover:bg-[#0d5546] focus-visible:outline-[#147a60]" : "bg-[#b45309] hover:bg-[#92400e] focus-visible:outline-[#d97706]"}`}
         >
-          {submitting ? "Processing…" : isDeposit ? "Deposit" : "Withdraw"}
+          {submitting ? "Processing…" : isTransfer ? "Transfer" : isDeposit ? "Deposit" : "Withdraw"}
         </button>
       </form>
     </section>

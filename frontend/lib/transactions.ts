@@ -1,12 +1,12 @@
 // --This file is contain MOCK data for transaction page ONLY. --
 
 export type Transaction = {
-	id: string;
-	type: "deposit" | "withdraw";
-	amount: number;
-	cardNumber: string;
-	date: string; // e.g. "15 Aug 26"
-	time: string; // e.g. "10:01 AM"
+  id: string;
+  type: "deposit" | "withdraw" | "transfer_in" | "transfer_out";
+  amount: number;
+  cardNumber: string;
+  date: string;
+  time: string;
 };
 
 export const MOCK_TRANSACTIONS: Transaction[] = [
