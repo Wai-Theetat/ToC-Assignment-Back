@@ -21,17 +21,31 @@ services:
       - "8080:8080"
     environment:
       DATABASE_URL: postgresql://TOC:givemeA+please@db:5432/bank_app
-      FRONTEND_URL: http://localhost:3000
+      # The backend's CORS config reads this as ONE origin:
+      #   allow_origins=[FRONTEND_URL]
+      # A comma-separated list is therefore NOT a list here — the whole string
+      # becomes a single unusable origin and every preflight returns 400.
+      #
+      # "*" is the only value that satisfies Starlette's CORSMiddleware with both
+      # local (localhost:3000) and tunneled (app.abasalwah.uk) frontends: it
+      # switches the middleware to a wildcard regex, which allows the request and
+      # echoes the caller's origin back.
+      FRONTEND_URL: ${FRONTEND_URL:-*}
     depends_on:
       db:
         condition: service_healthy
 
   frontend:
-    build: ./frontend
+    build:
+      context: ./deploy-front
+      args:
+        # MUST be present at BUILD time: Next.js inlines NEXT_PUBLIC_* into the
+        # static chunks. Changing it at runtime has no effect.
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8080}
     ports:
       - "3000:3000"
     environment:
-      NEXT_PUBLIC_API_URL: http://localhost:8080
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8080}
     depends_on:
       - backend
 
