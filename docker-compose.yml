@@ -37,7 +37,7 @@ services:
 
   frontend:
     build:
-      context: ./deploy-front
+      context: ./ToC-Assignment-Front
       args:
         # MUST be present at BUILD time: Next.js inlines NEXT_PUBLIC_* into the
         # static chunks. Changing it at runtime has no effect.
