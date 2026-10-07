@@ -2,5 +2,7 @@ __pycache__/
 backend/.env
 backend/venv/
 backend/*.db
+.env
 .DS_Store
 .vscode
+deploy-front
